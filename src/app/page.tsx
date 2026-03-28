@@ -43,6 +43,80 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Try it Free */}
+      <section className="py-20 border-t border-border bg-gradient-to-b from-accent/5 to-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-3">
+              Jump straight into a scene
+            </h2>
+            <p className="text-lg text-muted max-w-xl mx-auto">
+              No signup required. Pick a famous scene and start rehearsing in
+              seconds.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto mb-8">
+            {/* Romeo & Juliet */}
+            <div className="bg-surface border border-border rounded-2xl p-6 flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium border bg-success/20 text-success border-success/30">
+                  Beginner
+                </span>
+                <span className="text-sm text-muted">~5 min</span>
+              </div>
+              <h3 className="text-xl font-bold mb-1">
+                Romeo &amp; Juliet — Balcony Scene
+              </h3>
+              <p className="text-base text-muted mb-1">William Shakespeare</p>
+              <p className="text-lg text-muted leading-relaxed mb-5 flex-1">
+                The iconic balcony scene where Romeo and Juliet declare their
+                love. Perfect for beginners.
+              </p>
+              <Link
+                href="/demo"
+                className="block text-center bg-accent hover:bg-accent-dark text-white font-semibold px-6 py-3 rounded-xl text-lg transition-all hover:scale-[1.02] shadow-lg shadow-accent/25"
+              >
+                Try Now
+              </Link>
+            </div>
+
+            {/* Hamlet */}
+            <div className="bg-surface border border-border rounded-2xl p-6 flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium border bg-danger/20 text-danger border-danger/30">
+                  Advanced
+                </span>
+                <span className="text-sm text-muted">~6 min</span>
+              </div>
+              <h3 className="text-xl font-bold mb-1">
+                Hamlet — To Be or Not To Be
+              </h3>
+              <p className="text-base text-muted mb-1">William Shakespeare</p>
+              <p className="text-lg text-muted leading-relaxed mb-5 flex-1">
+                Hamlet&apos;s most famous soliloquy, plus the encounter with
+                Ophelia. A masterclass in subtext.
+              </p>
+              <Link
+                href="/scenes"
+                className="block text-center bg-accent hover:bg-accent-dark text-white font-semibold px-6 py-3 rounded-xl text-lg transition-all hover:scale-[1.02] shadow-lg shadow-accent/25"
+              >
+                Try Now
+              </Link>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/scenes"
+              className="text-lg text-accent-light hover:text-accent font-medium transition-colors"
+            >
+              Browse all scenes &rarr;
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works */}
       <section className="py-20 border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

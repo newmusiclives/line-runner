@@ -122,3 +122,70 @@ body {
   transform: translateY(-1px);
   transition: all 0.2s;
 }
+
+/* Memorization mode blanked text */
+.line-blanked {
+  color: transparent;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--muted) 0px,
+    var(--muted) 8px,
+    transparent 8px,
+    transparent 14px
+  );
+  background-size: 14px 2px;
+  background-position: bottom;
+  background-repeat: repeat-x;
+  user-select: none;
+  min-height: 1.5em;
+}
+
+/* Speed run timer colors */
+.speed-green { color: #00b894; }
+.speed-yellow { color: #fdcb6e; }
+.speed-red { color: #e17055; }
+
+@keyframes speed-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.speed-urgent {
+  animation: speed-flash 0.5s ease-in-out infinite;
+}
+
+/* Record button pulse */
+@keyframes record-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(225, 112, 85, 0.5); }
+  50% { box-shadow: 0 0 0 12px rgba(225, 112, 85, 0); }
+}
+.recording-active {
+  animation: record-pulse 1.5s ease-in-out infinite;
+}
+
+/* Mobile backstage tap zone */
+.backstage-tap {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mode selector card */
+.mode-card {
+  transition: all 0.2s;
+}
+.mode-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+.mode-card.active {
+  border-color: var(--accent);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+/* Difficulty badges */
+.badge-beginner { background: rgba(0, 184, 148, 0.15); color: #00b894; border: 1px solid rgba(0, 184, 148, 0.3); }
+.badge-intermediate { background: rgba(253, 203, 110, 0.15); color: #fdcb6e; border: 1px solid rgba(253, 203, 110, 0.3); }
+.badge-advanced { background: rgba(225, 112, 85, 0.15); color: #e17055; border: 1px solid rgba(225, 112, 85, 0.3); }

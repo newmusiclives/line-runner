@@ -73,6 +73,12 @@ export default async function RootLayout({
                   Upload Script
                 </Link>
                 <Link
+                  href="/scenes"
+                  className="text-base text-muted hover:text-foreground transition-colors"
+                >
+                  Scenes
+                </Link>
+                <Link
                   href="/pricing"
                   className="text-base text-muted hover:text-foreground transition-colors"
                 >
