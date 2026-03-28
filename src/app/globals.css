@@ -1,26 +1,124 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f0f13;
+  --foreground: #e8e6e3;
+  --accent: #6c5ce7;
+  --accent-light: #a29bfe;
+  --accent-dark: #4a3fb5;
+  --surface: #1a1a24;
+  --surface-light: #252536;
+  --border: #2d2d3f;
+  --success: #00b894;
+  --warning: #fdcb6e;
+  --danger: #e17055;
+  --muted: #9ba3a8;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-accent-dark: var(--accent-dark);
+  --color-surface: var(--surface);
+  --color-surface-light: var(--surface-light);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-muted: var(--muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Script line highlight animation */
+@keyframes pulse-highlight {
+  0%, 100% { background-color: rgba(108, 92, 231, 0.1); }
+  50% { background-color: rgba(108, 92, 231, 0.25); }
+}
+
+.line-active {
+  animation: pulse-highlight 2s ease-in-out infinite;
+  border-left: 3px solid var(--accent);
+}
+
+.line-my-turn {
+  background: rgba(0, 184, 148, 0.15);
+  border-left: 3px solid var(--success);
+}
+
+.line-done {
+  opacity: 0.5;
+}
+
+/* Annotation margin dots */
+.annotation-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.annotation-personal { background: #74b9ff; }
+.annotation-blocking { background: #e17055; }
+.annotation-emotion { background: #a29bfe; }
+.annotation-director { background: #00b894; }
+
+/* Teleprompter cue light glow */
+@keyframes cue-glow {
+  0%, 100% { box-shadow: 0 0 20px currentColor; }
+  50% { box-shadow: 0 0 60px currentColor; }
+}
+
+.cue-light-pulse {
+  animation: cue-glow 1.5s ease-in-out infinite;
+}
+
+/* Stage direction SFX line */
+.line-sfx {
+  background: rgba(253, 203, 110, 0.05);
+  border-left: 3px solid var(--warning);
+}
+
+/* Loop section highlight */
+.line-in-loop {
+  background: rgba(0, 184, 148, 0.05);
+  border-right: 2px solid var(--success);
+}
+
+/* Admin sidebar */
+.admin-sidebar a.active {
+  background: rgba(108, 92, 231, 0.15);
+  color: var(--accent-light);
+  border-right: 2px solid var(--accent);
+}
+
+/* Dashboard card hover */
+.dash-card:hover {
+  border-color: rgba(108, 92, 231, 0.3);
+  transform: translateY(-1px);
+  transition: all 0.2s;
 }
