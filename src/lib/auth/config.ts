@@ -4,6 +4,7 @@ import Google from "next-auth/providers/google";
 import { getUserByEmail, verifyPassword, createUser, getUserById } from "@/lib/db/users";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   providers: [
     Credentials({
       name: "credentials",
