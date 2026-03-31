@@ -12,10 +12,8 @@ export default function HomePage() {
             <span className="text-base text-accent-light">The World&apos;s Best Actor Rehearsal Platform</span>
           </div>
 
-          <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-6">
-            Rehearse. Perform.
-            <br />
-            <span className="text-accent-light">Earn.</span>
+          <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-6 whitespace-nowrap">
+            Rehearse. Perform. <span className="text-accent-light">Earn.</span>
           </h1>
 
           <p className="max-w-2xl mx-auto text-lg sm:text-xl text-muted mb-10 leading-relaxed">
