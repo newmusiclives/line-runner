@@ -2,11 +2,13 @@
 
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -27,7 +29,7 @@ export default function LoginPage() {
       if (res?.error) {
         setError("Invalid email or password.");
       } else {
-        router.push("/dashboard");
+        router.push(callbackUrl);
         router.refresh();
       }
     } catch {
@@ -141,7 +143,7 @@ export default function LoginPage() {
                   redirect: false,
                 });
                 if (res?.error) setError("Demo login failed. Try restarting the dev server.");
-                else { router.push("/dashboard"); router.refresh(); }
+                else { router.push(callbackUrl); router.refresh(); }
                 setLoading(false);
               }}
               disabled={loading}
@@ -190,5 +192,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PRICING_PLANS } from "@/lib/manifest-financial";
 import type { PricingPlan } from "@/types";
+import { PRICING_PLANS } from "@/lib/manifest-financial";
 
 export default function PricingPage() {
-  const [billingCycle, setBillingCycle] = useState<"one-time" | "subscription">(
-    "one-time"
-  );
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [email, setEmail] = useState("");
@@ -16,17 +13,9 @@ export default function PricingPage() {
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const filteredPlans =
-    billingCycle === "one-time"
-      ? PRICING_PLANS.filter((p) => p.period === "one-time")
-      : PRICING_PLANS.filter(
-          (p) => p.period === "monthly" || p.period === "annual"
-        );
-
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPlan) return;
-
     setProcessing(true);
     await new Promise((resolve) => setTimeout(resolve, 2000));
     setProcessing(false);
@@ -37,26 +26,12 @@ export default function PricingPage() {
     return (
       <div className="max-w-lg mx-auto px-4 py-24 text-center">
         <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
+          <svg className="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
         </div>
         <h1 className="text-3xl font-bold mb-4">You&apos;re all set!</h1>
-        <p className="text-muted mb-2">
-          Payment processed by{" "}
-          <span className="text-foreground font-medium">
-            Manifest Financial
-          </span>
-        </p>
-        <p className="text-muted mb-8">
-          Your <strong>{selectedPlan?.name}</strong> plan is now active.
-        </p>
-        <Link
-          href="/upload"
-          className="inline-block bg-accent hover:bg-accent-dark text-white font-semibold px-8 py-3 rounded-xl transition-colors"
-        >
-          Upload Your Script
-        </Link>
+        <p className="text-muted mb-2">Payment processed by <span className="text-foreground font-medium">Manifest Financial</span></p>
+        <p className="text-muted mb-8">Your <strong>{selectedPlan?.name}</strong> plan is now active.</p>
+        <Link href="/upload" className="inline-block bg-accent hover:bg-accent-dark text-white font-semibold px-8 py-3 rounded-xl transition-colors">Start Rehearsing</Link>
       </div>
     );
   }
@@ -64,142 +39,47 @@ export default function PricingPage() {
   if (showCheckout && selectedPlan) {
     return (
       <div className="max-w-lg mx-auto px-4 py-12">
-        <button
-          onClick={() => {
-            setShowCheckout(false);
-            setSelectedPlan(null);
-          }}
-          className="text-base text-muted hover:text-foreground mb-6 flex items-center gap-1"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
+        <button onClick={() => { setShowCheckout(false); setSelectedPlan(null); }} className="text-sm text-muted hover:text-foreground mb-6 flex items-center gap-1">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
           Back to plans
         </button>
-
         <div className="bg-surface border border-border rounded-2xl p-8">
-          {/* Order Summary */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-4 text-center">Checkout</h1>
-            <div className="bg-surface-light rounded-xl p-4 space-y-2 text-base">
-              <div className="flex justify-between">
-                <span className="text-muted">Plan</span>
-                <span className="font-medium">{selectedPlan.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted">AI dialogue included</span>
-                <span>{selectedPlan.costBreakdown.includedMinutes} min</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted">AI voices included</span>
-                <span>{selectedPlan.costBreakdown.includedVoices} voices</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted">Overage rate</span>
-                <span>
-                  ${selectedPlan.costBreakdown.overagePerMin.toFixed(2)}/min
-                </span>
-              </div>
-              <div className="border-t border-border pt-2 flex justify-between font-semibold">
-                <span>Total</span>
-                <span>
-                  ${selectedPlan.price.toFixed(2)}
-                  {selectedPlan.period !== "one-time" &&
-                    ` / ${selectedPlan.period === "annual" ? "year" : "month"}`}
-                </span>
-              </div>
+          <h1 className="text-2xl font-bold mb-4 text-center">Checkout</h1>
+          <div className="bg-surface-light rounded-xl p-4 space-y-2 text-sm mb-8">
+            <div className="flex justify-between"><span className="text-muted">Plan</span><span className="font-medium">{selectedPlan.name}</span></div>
+            <div className="flex justify-between"><span className="text-muted">Credits</span><span>{selectedPlan.id === "monthly" ? "50,000" : "150,000"}/month</span></div>
+            <div className="border-t border-border pt-2 flex justify-between font-semibold">
+              <span>Total</span><span>${selectedPlan.price}/month</span>
             </div>
           </div>
-
           <form onSubmit={handleCheckout} className="space-y-4">
             <div>
-              <label className="text-base text-muted block mb-1.5">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="Jane Smith"
-                className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-base focus:outline-none focus:border-accent placeholder:text-muted/50"
-              />
+              <label className="text-sm text-muted block mb-1.5">Full Name</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Jane Smith" className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-muted/50" />
             </div>
             <div>
-              <label className="text-base text-muted block mb-1.5">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="jane@example.com"
-                className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-base focus:outline-none focus:border-accent placeholder:text-muted/50"
-              />
+              <label className="text-sm text-muted block mb-1.5">Email Address</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="jane@example.com" className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-muted/50" />
             </div>
             <div>
-              <label className="text-base text-muted block mb-1.5">
-                Card Number
-              </label>
-              <input
-                type="text"
-                placeholder="4242 4242 4242 4242"
-                required
-                className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-base focus:outline-none focus:border-accent placeholder:text-muted/50 font-mono"
-              />
+              <label className="text-sm text-muted block mb-1.5">Card Number</label>
+              <input type="text" placeholder="4242 4242 4242 4242" required className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-muted/50 font-mono" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-base text-muted block mb-1.5">
-                  Expiry
-                </label>
-                <input
-                  type="text"
-                  placeholder="MM / YY"
-                  required
-                  className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-base focus:outline-none focus:border-accent placeholder:text-muted/50 font-mono"
-                />
+                <label className="text-sm text-muted block mb-1.5">Expiry</label>
+                <input type="text" placeholder="MM / YY" required className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-muted/50 font-mono" />
               </div>
               <div>
-                <label className="text-base text-muted block mb-1.5">
-                  CVC
-                </label>
-                <input
-                  type="text"
-                  placeholder="123"
-                  required
-                  className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-base focus:outline-none focus:border-accent placeholder:text-muted/50 font-mono"
-                />
+                <label className="text-sm text-muted block mb-1.5">CVC</label>
+                <input type="text" placeholder="123" required className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-muted/50 font-mono" />
               </div>
             </div>
-
-            <button
-              type="submit"
-              disabled={processing}
-              className="w-full bg-accent hover:bg-accent-dark disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition-all mt-4 flex items-center justify-center gap-2"
-            >
-              {processing ? (
-                <>
-                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  Pay ${selectedPlan.price.toFixed(2)}
-                  {selectedPlan.period !== "one-time" &&
-                    ` / ${selectedPlan.period === "annual" ? "year" : "month"}`}
-                </>
-              )}
+            <button type="submit" disabled={processing} className="w-full bg-accent hover:bg-accent-dark disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition-all mt-4 flex items-center justify-center gap-2">
+              {processing ? (<><svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Processing...</>) : (<>Subscribe — ${selectedPlan.price}/month</>)}
             </button>
-
-            <div className="flex items-center justify-center gap-2 text-sm text-muted mt-4">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-              </svg>
+            <div className="flex items-center justify-center gap-2 text-xs text-muted mt-4">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
               Secured by Manifest Financial
             </div>
           </form>
@@ -211,385 +91,263 @@ export default function PricingPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-16">
       <div className="text-center mb-12">
-        <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-          Pricing based on what you use
-        </h1>
-        <p className="text-muted text-xl max-w-2xl mx-auto mb-3">
-          Every plan is priced on AI voice minutes and number of characters.
-          Powered by premium ElevenLabs voices at{" "}
-          <span className="text-foreground font-medium">$0.24/min</span>{" "}
-          wholesale — we bundle it so you don&apos;t need your own API key.
+        <h1 className="text-4xl sm:text-5xl font-bold mb-4">Simple, transparent pricing</h1>
+        <p className="text-muted text-xl max-w-2xl mx-auto mb-2">
+          Every plan is based on credits. 1 credit = 1 character of AI-generated dialogue. ~1,000 credits = ~1 minute of audio.
         </p>
-        <p className="text-muted text-lg max-w-xl mx-auto mb-8">
-          ~1,000 characters of dialogue = ~1 minute of AI audio. A typical
-          script page = ~1 minute.
-        </p>
+        <p className="text-muted text-lg">Start free. Upgrade when you&apos;re ready. Cancel anytime.</p>
+      </div>
 
-        {/* Billing Toggle */}
-        <div className="inline-flex bg-surface border border-border rounded-xl p-1">
-          <button
-            onClick={() => setBillingCycle("one-time")}
-            className={`px-6 py-2 rounded-lg text-lg font-medium transition-colors ${
-              billingCycle === "one-time"
-                ? "bg-accent text-white"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            One-Time
-          </button>
-          <button
-            onClick={() => setBillingCycle("subscription")}
-            className={`px-6 py-2 rounded-lg text-lg font-medium transition-colors relative ${
-              billingCycle === "subscription"
-                ? "bg-accent text-white"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            Subscription
-            <span className="absolute -top-2 -right-2 bg-success text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
-              SAVE
-            </span>
-          </button>
+      {/* Plans Grid — 4 columns */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto mb-16">
+        {/* Free */}
+        <div className="bg-surface border border-border rounded-2xl p-7 flex flex-col">
+          <h3 className="text-2xl font-bold mb-1">Free</h3>
+          <p className="text-sm text-muted mb-5">Try Line Runner — no credit card required</p>
+          <div className="text-4xl font-bold mb-1">$0</div>
+          <div className="text-sm text-muted mb-6">forever</div>
+
+          <div className="bg-surface-light rounded-xl p-3 mb-5 text-center">
+            <div className="text-lg font-bold text-foreground">3 scenes</div>
+            <div className="text-xs text-muted">per month</div>
+          </div>
+
+          <ul className="space-y-2.5 mb-8 flex-1">
+            {["3 complete scene runs/month", "3 basic AI voices", "Script analysis on upload", "Standard rehearsal mode", "Line Memory Tracker"].map((f) => (
+              <li key={f} className="flex items-start gap-2 text-sm text-muted">
+                <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                {f}
+              </li>
+            ))}
+          </ul>
+          <Link href="/auth/register" className="w-full py-3 rounded-xl text-center font-semibold transition-all bg-surface-light hover:bg-border text-foreground block">Get Started Free</Link>
+        </div>
+
+        {/* Pro */}
+        <div className="bg-surface border-2 border-accent rounded-2xl p-7 flex flex-col relative shadow-lg shadow-accent/10">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold px-4 py-1 rounded-full">MOST POPULAR</div>
+          <h3 className="text-2xl font-bold mb-1">Pro</h3>
+          <p className="text-sm text-muted mb-5">For working actors who rehearse regularly</p>
+          <div className="text-4xl font-bold mb-1">$30</div>
+          <div className="text-sm text-muted mb-6">per month</div>
+
+          <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 mb-5 text-center">
+            <div className="text-lg font-bold text-accent-light">50,000 credits</div>
+            <div className="text-xs text-muted">~50 minutes of AI audio/month</div>
+          </div>
+
+          <ul className="space-y-2.5 mb-8 flex-1">
+            {[
+              "50,000 credits/month", "Unlimited scene runs", "All 10 rehearsal modes",
+              "25 AI voices per script", "Full voice customisation",
+              "AI Performance Coach", "Subtext, Wildcard, Cold Read modes",
+              "Objective & Obstacle, Dynamics sliders",
+              "Self-Tape Studio with 1080p export",
+              "Audition Vault + Scene Exchange",
+              "Annotations, Sleep Learning, Ritual Mode",
+            ].map((f) => (
+              <li key={f} className="flex items-start gap-2 text-sm text-muted">
+                <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                {f}
+              </li>
+            ))}
+          </ul>
+          <button onClick={() => { setSelectedPlan(PRICING_PLANS[1]); setShowCheckout(true); }} className="w-full py-3 rounded-xl font-semibold transition-all bg-accent hover:bg-accent-dark text-white shadow-lg shadow-accent/25">Start Free Trial</button>
+        </div>
+
+        {/* Studio */}
+        <div className="bg-surface border border-border rounded-2xl p-7 flex flex-col">
+          <h3 className="text-2xl font-bold mb-1">Studio</h3>
+          <p className="text-sm text-muted mb-5">For professional actors and voice artists</p>
+          <div className="text-4xl font-bold mb-1">$90</div>
+          <div className="text-sm text-muted mb-6">per month</div>
+
+          <div className="bg-success/10 border border-success/20 rounded-xl p-3 mb-5 text-center">
+            <div className="text-lg font-bold text-success">150,000 credits</div>
+            <div className="text-xs text-muted">~150 minutes of AI audio/month</div>
+          </div>
+
+          <ul className="space-y-2.5 mb-8 flex-1">
+            {[
+              "150,000 credits/month",
+              "Everything in Pro",
+              "VO Professional Suite (10 tools)",
+              "Demo Reel Producer (7 genres)",
+              "Client Delivery Portal",
+              "Rate Calculator & Negotiation Coach",
+              "VO Genre Training (105 scripts)",
+              "Monologue Masterclass (sell & earn)",
+              "PASS fan memberships (earn)",
+              "Voice Print Builder (ElevenLabs)",
+              "STUDIO Business Dashboard",
+              "Priority support",
+            ].map((f) => (
+              <li key={f} className="flex items-start gap-2 text-sm">
+                <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                <span className={f.startsWith("Everything") ? "font-medium text-foreground" : "text-muted"}>{f}</span>
+              </li>
+            ))}
+          </ul>
+          <button onClick={() => { setSelectedPlan(PRICING_PLANS[2]); setShowCheckout(true); }} className="w-full py-3 rounded-xl font-semibold transition-all bg-surface-light hover:bg-border text-foreground">Get Studio</button>
+        </div>
+
+        {/* Enterprise */}
+        <div className="bg-surface border border-border rounded-2xl p-7 flex flex-col bg-gradient-to-b from-warning/5 to-transparent">
+          <h3 className="text-2xl font-bold mb-1">Enterprise</h3>
+          <p className="text-sm text-muted mb-5">For stage schools, theatre companies, and organisations</p>
+          <div className="text-4xl font-bold mb-1">Custom</div>
+          <div className="text-sm text-muted mb-6">tailored to your needs</div>
+
+          <div className="bg-warning/10 border border-warning/20 rounded-xl p-3 mb-5 text-center">
+            <div className="text-lg font-bold text-warning">Unlimited credits</div>
+            <div className="text-xs text-muted">volume pricing available</div>
+          </div>
+
+          <ul className="space-y-2.5 mb-8 flex-1">
+            {[
+              "Everything in Studio",
+              "Unlimited credits (volume pricing)",
+              "Multi-seat admin dashboard",
+              "Student & faculty accounts",
+              "Director's Cut for teacher notes",
+              "Bulk script upload & management",
+              "Custom VO Curriculum modules",
+              "Co-branded platform option",
+              "Dedicated account manager",
+              "SSO / institutional login",
+              "Annual invoicing available",
+              "SLA & priority support",
+            ].map((f) => (
+              <li key={f} className="flex items-start gap-2 text-sm">
+                <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                <span className={f.startsWith("Everything") ? "font-medium text-foreground" : "text-muted"}>{f}</span>
+              </li>
+            ))}
+          </ul>
+          <a href="mailto:enterprise@linerunner.app" className="w-full py-3 rounded-xl font-semibold transition-all bg-warning/10 hover:bg-warning/20 text-warning border border-warning/20 block text-center">Contact Sales</a>
         </div>
       </div>
 
-      {/* Plans Grid */}
-      <div
-        className={`grid gap-6 max-w-5xl mx-auto ${
-          filteredPlans.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2"
-        }`}
-      >
-        {filteredPlans.map((plan) => {
-          const effectivePerMin =
-            plan.period === "one-time"
-              ? plan.price / plan.costBreakdown.includedMinutes
-              : plan.period === "annual"
-                ? plan.price / 12 / plan.costBreakdown.includedMinutes
-                : plan.price / plan.costBreakdown.includedMinutes;
-          const perVoice =
-            plan.price / plan.costBreakdown.includedVoices;
-
-          return (
-            <div
-              key={plan.id}
-              className={`relative bg-surface border rounded-2xl p-8 flex flex-col ${
-                plan.highlighted
-                  ? "border-accent shadow-lg shadow-accent/10"
-                  : "border-border"
-              }`}
-            >
-              {plan.highlighted && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-sm font-bold px-4 py-1 rounded-full">
-                  {plan.period === "one-time" ? "BEST FOR FULL PLAYS" : "BEST VALUE"}
-                </div>
-              )}
-
-              <div className="mb-4">
-                <h3 className="text-2xl font-bold mb-1">{plan.name}</h3>
-                <p className="text-lg text-muted">{plan.description}</p>
-              </div>
-
-              {/* Price */}
-              <div className="mb-5">
-                <span className="text-5xl font-bold">
-                  ${plan.price.toFixed(2)}
-                </span>
-                {plan.period !== "one-time" && (
-                  <span className="text-muted text-lg">
-                    /{plan.period === "annual" ? "year" : "month"}
-                  </span>
-                )}
-                {plan.period === "annual" && (
-                  <div className="text-lg text-success mt-1">
-                    Save $240/year vs monthly ($80/mo effective)
-                  </div>
-                )}
-              </div>
-
-              {/* Usage Breakdown — the key new section */}
-              <div className="bg-surface-light/50 border border-border rounded-xl p-4 mb-5">
-                <div className="text-base uppercase tracking-wider text-muted font-medium mb-3">
-                  What&apos;s Included
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-2 bg-background/50 rounded-lg">
-                    <div className="text-2xl font-bold text-accent-light">
-                      {plan.costBreakdown.includedMinutes}
-                    </div>
-                    <div className="text-sm text-muted">
-                      min of AI audio
-                      {plan.period === "monthly" && "/mo"}
-                      {plan.period === "annual" && "/mo"}
-                    </div>
-                  </div>
-                  <div className="text-center p-2 bg-background/50 rounded-lg">
-                    <div className="text-2xl font-bold text-accent-light">
-                      {plan.costBreakdown.includedVoices}
-                    </div>
-                    <div className="text-base text-muted">AI voices</div>
-                  </div>
-                  <div className="text-center p-2 bg-background/50 rounded-lg">
-                    <div className="text-lg font-bold text-foreground">
-                      ${effectivePerMin.toFixed(2)}
-                    </div>
-                    <div className="text-base text-muted">effective /min</div>
-                  </div>
-                  <div className="text-center p-2 bg-background/50 rounded-lg">
-                    <div className="text-lg font-bold text-foreground">
-                      ${perVoice.toFixed(2)}
-                    </div>
-                    <div className="text-base text-muted">per voice</div>
-                  </div>
-                </div>
-                <div className="mt-3 text-base text-muted text-center">
-                  Overage: ${plan.costBreakdown.overagePerMin.toFixed(2)}/min
-                  beyond included minutes
-                </div>
-              </div>
-
-              {/* Script lengths */}
-              <div className="mb-5">
-                <div className="text-base uppercase tracking-wider text-muted font-medium mb-2">
-                  Script Lengths
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {plan.scriptLengths.map((sl) => (
-                    <span
-                      key={sl}
-                      className="text-base bg-surface-light px-2.5 py-1 rounded-full text-muted"
-                    >
-                      {sl}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Features */}
-              <ul className="space-y-2.5 mb-8 flex-1">
-                {plan.features.map((feature) => (
-                  <li
-                    key={feature}
-                    className="flex items-start gap-2 text-lg"
-                  >
-                    <svg className="w-5 h-5 text-success shrink-0 mt-1" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => {
-                  setSelectedPlan(plan);
-                  setShowCheckout(true);
-                }}
-                className={`w-full py-3.5 rounded-xl text-lg font-semibold transition-all ${
-                  plan.highlighted
-                    ? "bg-accent hover:bg-accent-dark text-white shadow-lg shadow-accent/25"
-                    : "bg-surface-light hover:bg-border text-foreground"
-                }`}
-              >
-                {plan.period === "one-time" ? "Buy Now" : "Subscribe"}
-              </button>
-            </div>
-          );
-        })}
+      {/* Credits Explainer */}
+      <div className="max-w-3xl mx-auto bg-surface border border-border rounded-2xl p-8 mb-16">
+        <h2 className="text-2xl font-bold text-center mb-6">How credits work</h2>
+        <div className="grid sm:grid-cols-3 gap-6 text-center mb-6">
+          <div>
+            <div className="text-3xl font-bold text-accent-light mb-1">1 credit</div>
+            <div className="text-sm text-muted">= 1 character of AI dialogue</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-accent-light mb-1">~1,000</div>
+            <div className="text-sm text-muted">credits = ~1 minute of audio</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-accent-light mb-1">~1 page</div>
+            <div className="text-sm text-muted">of script = ~1,000 credits</div>
+          </div>
+        </div>
+        <p className="text-sm text-muted text-center">Only the AI characters&apos; lines consume credits — your lines are spoken live, so they&apos;re free. A typical 15-page short episode uses ~8,000-12,000 credits per full run-through (since only the AI&apos;s half of the dialogue is generated).</p>
       </div>
 
-      {/* Cost Comparison Table */}
-      <div className="mt-16 max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-2">
-          Cost at a glance
-        </h2>
-        <p className="text-muted text-center text-lg mb-8">
-          Based on ElevenLabs Pro-tier voice generation ($0.24/min wholesale)
-        </p>
+      {/* Feature Comparison */}
+      <div className="max-w-6xl mx-auto mb-16">
+        <h2 className="text-3xl font-bold text-center mb-8">Compare plans</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-lg">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 text-muted font-medium">
-                  Script Type
-                </th>
-                <th className="text-center py-3 px-4 text-muted font-medium">
-                  Duration
-                </th>
-                <th className="text-center py-3 px-4 text-muted font-medium">
-                  Typical Voices
-                </th>
-                <th className="text-center py-3 px-4 text-muted font-medium">
-                  AI Voice Cost
-                </th>
-                <th className="text-center py-3 px-4 text-muted font-medium">
-                  Our Price
-                </th>
+                <th className="text-left py-3 px-4 text-muted font-medium">Feature</th>
+                <th className="text-center py-3 px-4 text-muted font-medium w-24">Free</th>
+                <th className="text-center py-3 px-4 font-medium w-24 text-accent-light">Pro</th>
+                <th className="text-center py-3 px-4 text-muted font-medium w-24">Studio</th>
+                <th className="text-center py-3 px-4 text-muted font-medium w-24">Enterprise</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-border/50">
-                <td className="py-3 px-4 font-medium">Short Episode</td>
-                <td className="py-3 px-4 text-center text-muted">
-                  ~15 min
-                </td>
-                <td className="py-3 px-4 text-center text-muted">
-                  2-5 voices
-                </td>
-                <td className="py-3 px-4 text-center text-muted font-mono">
-                  ~$5
-                </td>
-                <td className="py-3 px-4 text-center font-semibold text-accent-light">
-                  $10
-                </td>
-              </tr>
-              <tr className="border-b border-border/50">
-                <td className="py-3 px-4 font-medium">One Act</td>
-                <td className="py-3 px-4 text-center text-muted">
-                  ~40 min
-                </td>
-                <td className="py-3 px-4 text-center text-muted">
-                  4-10 voices
-                </td>
-                <td className="py-3 px-4 text-center text-muted font-mono">
-                  ~$15
-                </td>
-                <td className="py-3 px-4 text-center font-semibold text-accent-light">
-                  $20
-                </td>
-              </tr>
-              <tr className="border-b border-border/50">
-                <td className="py-3 px-4 font-medium">Three Acts</td>
-                <td className="py-3 px-4 text-center text-muted">
-                  ~120 min
-                </td>
-                <td className="py-3 px-4 text-center text-muted">
-                  8-20 voices
-                </td>
-                <td className="py-3 px-4 text-center text-muted font-mono">
-                  ~$30
-                </td>
-                <td className="py-3 px-4 text-center font-semibold text-accent-light">
-                  $60
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 px-4 font-medium">
-                  Unlimited (Monthly)
-                </td>
-                <td className="py-3 px-4 text-center text-muted">
-                  500 min/mo
-                </td>
-                <td className="py-3 px-4 text-center text-muted">
-                  Up to 25
-                </td>
-                <td className="py-3 px-4 text-center text-muted font-mono">
-                  ~$150 /mo
-                </td>
-                <td className="py-3 px-4 text-center font-semibold text-accent-light">
-                  $100/mo
-                </td>
-              </tr>
+              {[
+                { feature: "Monthly credits", free: "—", pro: "50,000", studio: "150,000", enterprise: "Unlimited" },
+                { feature: "Scene runs", free: "3/month", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
+                { feature: "AI voices per script", free: "3", pro: "25", studio: "25", enterprise: "25+" },
+                { feature: "Rehearsal modes", free: "1", pro: "10", studio: "10", enterprise: "10" },
+                { feature: "Script analysis on upload", free: true, pro: true, studio: true, enterprise: true },
+                { feature: "AI Performance Coach", free: false, pro: true, studio: true, enterprise: true },
+                { feature: "Subtext, Wildcard, Cold Read", free: false, pro: true, studio: true, enterprise: true },
+                { feature: "Objective & Obstacle Mode", free: false, pro: true, studio: true, enterprise: true },
+                { feature: "Relationship Dynamics", free: false, pro: true, studio: true, enterprise: true },
+                { feature: "Self-Tape Studio + export", free: false, pro: true, studio: true, enterprise: true },
+                { feature: "Audition Vault", free: false, pro: true, studio: true, enterprise: true },
+                { feature: "Scene Exchange", free: false, pro: true, studio: true, enterprise: true },
+                { feature: "VO Professional Suite", free: false, pro: false, studio: true, enterprise: true },
+                { feature: "Demo Reel Producer", free: false, pro: false, studio: true, enterprise: true },
+                { feature: "Client Delivery Portal", free: false, pro: false, studio: true, enterprise: true },
+                { feature: "Income tools (Masterclass, PASS)", free: false, pro: false, studio: true, enterprise: true },
+                { feature: "STUDIO Dashboard", free: false, pro: false, studio: true, enterprise: true },
+                { feature: "Multi-seat admin", free: false, pro: false, studio: false, enterprise: true },
+                { feature: "SSO / institutional login", free: false, pro: false, studio: false, enterprise: true },
+                { feature: "Dedicated account manager", free: false, pro: false, studio: false, enterprise: true },
+              ].map((row) => (
+                <tr key={row.feature} className="border-b border-border/50">
+                  <td className="py-3 px-4">{row.feature}</td>
+                  {(["free", "pro", "studio", "enterprise"] as const).map((tier) => {
+                    const val = row[tier];
+                    return (
+                      <td key={tier} className="py-3 px-4 text-center">
+                        {typeof val === "boolean" ? (
+                          val ? <svg className="w-5 h-5 text-success mx-auto" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> : <span className="text-muted">—</span>
+                        ) : (
+                          <span className={tier === "pro" ? "font-medium text-accent-light" : tier === "enterprise" ? "font-medium text-warning" : "text-muted"}>{val}</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-        <p className="text-base text-muted text-center mt-4">
-          AI voice cost = minutes x $0.24/min (ElevenLabs) + voices x
-          $0.10/voice overhead. Our pricing bundles everything so you never
-          need your own ElevenLabs account.
-        </p>
       </div>
 
-      {/* Trust Badges */}
-      <div className="mt-16 text-center">
-        <div className="flex items-center justify-center gap-8 text-lg text-muted flex-wrap">
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-            </svg>
-            Secure payments
-          </div>
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-            </svg>
-            Manifest Financial
-          </div>
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-            </svg>
-            Cancel anytime
-          </div>
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            No ElevenLabs account needed
-          </div>
+      {/* Enterprise CTA */}
+      <div className="max-w-3xl mx-auto bg-gradient-to-r from-warning/5 to-accent/5 border border-border rounded-2xl p-8 flex flex-col md:flex-row items-center gap-6 mb-16">
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold mb-2">Stage schools & theatre companies</h2>
+          <p className="text-muted">Volume pricing, multi-seat admin, student accounts, Director&apos;s Cut for teacher-student collaboration, custom VO curriculum, and co-branded options. Annual invoicing available.</p>
         </div>
+        <a href="mailto:enterprise@linerunner.app" className="shrink-0 bg-warning/10 hover:bg-warning/20 text-warning font-semibold px-8 py-3.5 rounded-xl transition-colors border border-warning/20 whitespace-nowrap">
+          Contact Sales
+        </a>
       </div>
 
       {/* FAQ */}
-      <div className="mt-20 max-w-2xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8">
-          Frequently asked questions
-        </h2>
+      <div className="max-w-2xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-8">Frequently asked questions</h2>
         <div className="space-y-4">
           {[
-            {
-              q: "How are AI voice minutes calculated?",
-              a: "Roughly 1,000 characters of dialogue equals 1 minute of AI-generated audio. A typical script page with dialogue runs about 1 minute. Only the AI characters' lines count — your lines aren't generated since you speak them live.",
-            },
-            {
-              q: "Why does the number of voices affect pricing?",
-              a: "Each unique AI voice requires its own ElevenLabs voice processing slot. More characters in your script means more distinct voices to generate, which increases the underlying cost. Our plans bundle generous voice counts so you're covered.",
-            },
-            {
-              q: "What happens if I go over my included minutes?",
-              a: "One-time plans are capped at their included minutes. Subscription plans allow overages at a discounted per-minute rate ($0.30-$0.35/min) billed at the end of your cycle.",
-            },
-            {
-              q: "What's the wholesale voice cost you mention?",
-              a: "We use ElevenLabs Pro-tier API pricing at $0.24 per 1,000 characters (~1 minute of audio), plus $0.10 per unique voice for processing overhead. Our plans bundle this so you never need your own ElevenLabs API key.",
-            },
-            {
-              q: "Can I customize the AI voices?",
-              a: "Yes! Each AI character voice can be adjusted for gender, age range (child, young adult, adult, elderly), accent (12+ options including British RP, Cockney, Australian, Southern US, and more), pitch, and speed.",
-            },
-            {
-              q: "What script formats do you support?",
-              a: "PDF and plain text (.txt) files. Our parser automatically detects character names, dialogue, acts, scenes, and stage directions from standard script formatting.",
-            },
-            {
-              q: "Who processes payments?",
-              a: "All payments are securely processed by Manifest Financial. We never store your card details on our servers.",
-            },
-            {
-              q: "Can I cancel my subscription?",
-              a: "Absolutely. Monthly and annual subscriptions can be cancelled anytime. You keep access through the end of your billing period.",
-            },
+            { q: "What are credits?", a: "1 credit = 1 character of AI-generated dialogue. A typical script page contains about 1,000 characters of dialogue, which equals roughly 1 minute of AI audio. Only the AI characters' lines consume credits — your lines are spoken live and cost nothing." },
+            { q: "What happens if I run out of credits?", a: "On the Free plan, you'll need to wait until next month. On Pro and Studio, you can purchase additional credit packs or upgrade your plan. We'll notify you when you're approaching your limit." },
+            { q: "Is the Free plan really free?", a: "Yes. No credit card required. You get 3 complete scene runs per month with basic AI voices and script analysis. Upgrade anytime." },
+            { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, and 50,000 credits. Studio triples your credits to 150,000 and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
+            { q: "What about stage schools and theatre companies?", a: "Enterprise plans include unlimited credits, multi-seat admin, student & faculty accounts, Director's Cut for teacher collaboration, custom curriculum, SSO, and annual invoicing. Contact enterprise@linerunner.app for a custom quote." },
+            { q: "Can I cancel anytime?", a: "Yes. Pro and Studio are monthly subscriptions with no lock-in. Cancel anytime and keep access through the end of your billing period." },
+            { q: "How do income features work?", a: "Studio subscribers can sell Monologue Masterclasses (you keep 85%), set up PASS fan memberships ($3/$9/$19 tiers, you keep 85%), build ElevenLabs voice prints, and use the Client Delivery Portal (3% transaction fee). All earnings are visible in the STUDIO dashboard with monthly payouts." },
+            { q: "Who processes payments?", a: "All payments are securely processed by Manifest Financial. We never store your card details." },
           ].map((faq) => (
-            <details
-              key={faq.q}
-              className="group bg-surface border border-border rounded-xl"
-            >
-              <summary className="flex items-center justify-between p-5 cursor-pointer text-lg font-medium">
+            <details key={faq.q} className="group bg-surface border border-border rounded-xl">
+              <summary className="flex items-center justify-between p-5 cursor-pointer font-medium">
                 {faq.q}
-                <svg
-                  className="w-5 h-5 text-muted group-open:rotate-180 transition-transform shrink-0 ml-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
+                <svg className="w-5 h-5 text-muted group-open:rotate-180 transition-transform shrink-0 ml-2" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
               </summary>
-              <div className="px-5 pb-5 text-lg text-muted leading-relaxed">
-                {faq.a}
-              </div>
+              <div className="px-5 pb-5 text-sm text-muted leading-relaxed">{faq.a}</div>
             </details>
           ))}
+        </div>
+      </div>
+
+      {/* Trust */}
+      <div className="mt-16 text-center">
+        <div className="flex items-center justify-center gap-8 text-sm text-muted flex-wrap">
+          <div className="flex items-center gap-2"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>Secure payments</div>
+          <div className="flex items-center gap-2"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>Manifest Financial</div>
+          <div className="flex items-center gap-2"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" /></svg>Cancel anytime</div>
         </div>
       </div>
     </div>

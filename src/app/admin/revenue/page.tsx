@@ -21,11 +21,13 @@ interface PlanRevenue {
   total_revenue?: number;
 }
 
-const formatPlanName = (id: string) =>
-  id
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
+const PLAN_DISPLAY: Record<string, string> = {
+  free: "Free",
+  monthly: "Pro ($30/mo — 50k credits)",
+  studio: "Studio ($90/mo — 150k credits)",
+  enterprise: "Enterprise (custom)",
+};
+const formatPlanName = (id: string) => PLAN_DISPLAY[id] || id;
 
 export default function AdminRevenuePage() {
   const [daily, setDaily] = useState<RevenueDay[]>([]);
