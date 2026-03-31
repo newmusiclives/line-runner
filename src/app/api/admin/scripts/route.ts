@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "50", 10);
 
-  const result = listAllScripts(page, limit);
+  const result = await listAllScripts(page, limit);
   return NextResponse.json(result);
 }
 
@@ -36,8 +36,8 @@ export async function PATCH(request: Request) {
   }
 
   const { scriptId, status } = parsed.data;
-  updateScriptStatus(scriptId, status);
-  addAuditLog(session.user.id, `script-${status}`, "script", scriptId);
+  await updateScriptStatus(scriptId, status);
+  await addAuditLog(session.user.id, `script-${status}`, "script", scriptId);
 
   return NextResponse.json({ success: true });
 }

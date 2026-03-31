@@ -21,7 +21,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const rehearsal = getSession(id);
+  const rehearsal = await getSession(id);
   if (!rehearsal) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -42,7 +42,7 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const rehearsal = getSession(id);
+  const rehearsal = await getSession(id);
   if (!rehearsal) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -58,7 +58,7 @@ export async function PATCH(
 
   const { linesCompleted, furthestLine, durationSecs, loopCount, ended } = parsed.data;
 
-  updateSession(id, {
+  await updateSession(id, {
     lines_completed: linesCompleted,
     furthest_line: furthestLine,
     duration_secs: durationSecs,

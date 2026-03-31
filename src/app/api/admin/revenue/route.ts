@@ -8,8 +8,10 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  return NextResponse.json({
-    daily: getRevenueByDay(),
-    distribution: getPlanDistribution(),
-  });
+  const [daily, distribution] = await Promise.all([
+    getRevenueByDay(),
+    getPlanDistribution(),
+  ]);
+
+  return NextResponse.json({ daily, distribution });
 }

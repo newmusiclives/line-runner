@@ -9,48 +9,38 @@ export interface PerformanceStats {
   totalSessions: number;
 }
 
-export function getUserPerformanceStats(userId: string): PerformanceStats {
-  const db = getDb();
+export async function getUserPerformanceStats(userId: string): Promise<PerformanceStats> {
+  const sql = getDb();
 
-  // Total rehearsal time
-  const { totalSecs } = db.prepare(
-    "SELECT COALESCE(SUM(duration_secs), 0) as totalSecs FROM rehearsal_sessions WHERE user_id = ?"
-  ).get(userId) as { totalSecs: number };
+  const [totalSecsRow, totalSessionsRow, linesMasteredRow, lastSessionRow, sessionsRows, mostRehearsedRow] = await Promise.all([
+    sql`SELECT COALESCE(SUM(duration_secs), 0) as val FROM rehearsal_sessions WHERE user_id = ${userId}`,
+    sql`SELECT COUNT(*) as val FROM rehearsal_sessions WHERE user_id = ${userId}`,
+    sql`SELECT COUNT(*) as val FROM (
+      SELECT lm.line_id FROM line_metrics lm
+      JOIN rehearsal_sessions rs ON lm.session_id = rs.id
+      WHERE rs.user_id = ${userId} AND lm.skipped = false AND lm.replayed = false
+      GROUP BY lm.line_id HAVING COUNT(DISTINCT lm.session_id) >= 3
+    ) sub`,
+    sql`SELECT lines_completed, lines_total FROM rehearsal_sessions WHERE user_id = ${userId} ORDER BY started_at DESC LIMIT 1`,
+    sql`SELECT DISTINCT DATE(started_at) as d FROM rehearsal_sessions WHERE user_id = ${userId} ORDER BY d DESC`,
+    sql`SELECT script_id, COUNT(*) as cnt FROM rehearsal_sessions WHERE user_id = ${userId} GROUP BY script_id ORDER BY cnt DESC LIMIT 1`,
+  ]);
 
-  // Total sessions
-  const { totalSessions } = db.prepare(
-    "SELECT COUNT(*) as totalSessions FROM rehearsal_sessions WHERE user_id = ?"
-  ).get(userId) as { totalSessions: number };
+  const totalSecs = Number(totalSecsRow[0].val);
+  const totalSessions = Number(totalSessionsRow[0].val);
+  const linesMastered = Number(linesMasteredRow[0]?.val ?? 0);
 
-  // Lines mastered (completed without skip in 3+ sessions)
-  const { linesMastered } = db.prepare(
-    `SELECT COUNT(DISTINCT lm.line_id) as linesMastered
-     FROM line_metrics lm
-     JOIN rehearsal_sessions rs ON lm.session_id = rs.id
-     WHERE rs.user_id = ? AND lm.skipped = 0 AND lm.replayed = 0
-     GROUP BY lm.line_id HAVING COUNT(DISTINCT lm.session_id) >= 3`
-  ).get(userId) as { linesMastered: number } || { linesMastered: 0 };
-
-  // Fluency score (last session)
-  const lastSession = db.prepare(
-    "SELECT * FROM rehearsal_sessions WHERE user_id = ? ORDER BY started_at DESC LIMIT 1"
-  ).get(userId) as { lines_completed: number; lines_total: number } | undefined;
-
-  const fluencyScore = lastSession && lastSession.lines_total > 0
-    ? Math.round((lastSession.lines_completed / lastSession.lines_total) * 100)
+  const fluencyScore = lastSessionRow.length > 0 && Number(lastSessionRow[0].lines_total) > 0
+    ? Math.round((Number(lastSessionRow[0].lines_completed) / Number(lastSessionRow[0].lines_total)) * 100)
     : 0;
 
-  // Session streak (consecutive days)
-  const sessions = db.prepare(
-    "SELECT DISTINCT date(started_at) as d FROM rehearsal_sessions WHERE user_id = ? ORDER BY d DESC"
-  ).all(userId) as { d: string }[];
-
+  // Session streak
   let streak = 0;
-  if (sessions.length > 0) {
+  if (sessionsRows.length > 0) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    for (let i = 0; i < sessions.length; i++) {
-      const sessionDate = new Date(sessions[i].d);
+    for (let i = 0; i < sessionsRows.length; i++) {
+      const sessionDate = new Date(sessionsRows[i].d as string);
       const expectedDate = new Date(today);
       expectedDate.setDate(expectedDate.getDate() - i);
       expectedDate.setHours(0, 0, 0, 0);
@@ -62,22 +52,18 @@ export function getUserPerformanceStats(userId: string): PerformanceStats {
     }
   }
 
-  // Improvement delta (first vs last session fluency for most-rehearsed script)
+  // Improvement delta
   let improvementDelta = 0;
-  const mostRehearsed = db.prepare(
-    `SELECT script_id, COUNT(*) as cnt FROM rehearsal_sessions WHERE user_id = ? GROUP BY script_id ORDER BY cnt DESC LIMIT 1`
-  ).get(userId) as { script_id: string; cnt: number } | undefined;
-
-  if (mostRehearsed && mostRehearsed.cnt >= 2) {
-    const first = db.prepare(
-      "SELECT lines_completed, lines_total FROM rehearsal_sessions WHERE user_id = ? AND script_id = ? ORDER BY started_at ASC LIMIT 1"
-    ).get(userId, mostRehearsed.script_id) as { lines_completed: number; lines_total: number };
-    const last = db.prepare(
-      "SELECT lines_completed, lines_total FROM rehearsal_sessions WHERE user_id = ? AND script_id = ? ORDER BY started_at DESC LIMIT 1"
-    ).get(userId, mostRehearsed.script_id) as { lines_completed: number; lines_total: number };
-
-    const firstFluency = first.lines_total > 0 ? (first.lines_completed / first.lines_total) * 100 : 0;
-    const lastFluency = last.lines_total > 0 ? (last.lines_completed / last.lines_total) * 100 : 0;
+  if (mostRehearsedRow.length > 0 && Number(mostRehearsedRow[0].cnt) >= 2) {
+    const scriptId = mostRehearsedRow[0].script_id as string;
+    const [firstRows, lastRows] = await Promise.all([
+      sql`SELECT lines_completed, lines_total FROM rehearsal_sessions WHERE user_id = ${userId} AND script_id = ${scriptId} ORDER BY started_at ASC LIMIT 1`,
+      sql`SELECT lines_completed, lines_total FROM rehearsal_sessions WHERE user_id = ${userId} AND script_id = ${scriptId} ORDER BY started_at DESC LIMIT 1`,
+    ]);
+    const first = firstRows[0];
+    const last = lastRows[0];
+    const firstFluency = Number(first.lines_total) > 0 ? (Number(first.lines_completed) / Number(first.lines_total)) * 100 : 0;
+    const lastFluency = Number(last.lines_total) > 0 ? (Number(last.lines_completed) / Number(last.lines_total)) * 100 : 0;
     improvementDelta = Math.round(lastFluency - firstFluency);
   }
 

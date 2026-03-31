@@ -13,7 +13,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const bookmarks = getBookmarks(id, session.user.id);
+  const bookmarks = await getBookmarks(id, session.user.id);
   return NextResponse.json(bookmarks);
 }
 
@@ -34,7 +34,7 @@ export async function POST(
   }
 
   const { label, startLineIdx, endLineIdx } = parsed.data;
-  const bookmarkId = createBookmark(session.user.id, id, label, startLineIdx, endLineIdx);
+  const bookmarkId = await createBookmark(session.user.id, id, label, startLineIdx, endLineIdx);
 
   return NextResponse.json({ id: bookmarkId }, { status: 201 });
 }
@@ -51,6 +51,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Missing bookmark id" }, { status: 400 });
   }
 
-  deleteBookmark(bookmarkId, session.user.id);
+  await deleteBookmark(bookmarkId, session.user.id);
   return NextResponse.json({ success: true });
 }

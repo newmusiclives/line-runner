@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "50", 10);
 
-  const result = listUsers(page, limit);
+  const result = await listUsers(page, limit);
   return NextResponse.json(result);
 }
 
@@ -39,16 +39,16 @@ export async function PATCH(request: Request) {
 
   switch (action) {
     case "suspend":
-      updateUser(userId, { suspended_at: new Date().toISOString() });
+      await updateUser(userId, { suspended_at: new Date().toISOString() });
       break;
     case "unsuspend":
-      updateUser(userId, { suspended_at: null as any });
+      await updateUser(userId, { suspended_at: null as any });
       break;
     case "make-admin":
-      updateUser(userId, { role: "admin" });
+      await updateUser(userId, { role: "admin" });
       break;
   }
 
-  addAuditLog(session.user.id, action, "user", userId);
+  await addAuditLog(session.user.id, action, "user", userId);
   return NextResponse.json({ success: true });
 }

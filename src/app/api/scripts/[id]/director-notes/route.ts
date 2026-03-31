@@ -21,7 +21,7 @@ export async function GET(
     return NextResponse.json({ error: "Missing character query param" }, { status: 400 });
   }
 
-  const script = getScriptById(id);
+  const script = await getScriptById(id);
   if (!script) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

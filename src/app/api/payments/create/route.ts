@@ -24,14 +24,14 @@ export async function POST(request: Request) {
 
   // Simulate payment success for now
   const amountCents = Math.round(plan.price * 100);
-  const subscription = createSubscription(
+  const subscription = await createSubscription(
     session.user.id,
     plan.id,
     amountCents,
     plan.period,
     plan.costBreakdown.includedMinutes,
     plan.costBreakdown.includedVoices,
-    `sim_${Date.now()}` // simulated payment ID
+    `sim_${Date.now()}`
   );
 
   return NextResponse.json({ success: true, subscription }, { status: 201 });

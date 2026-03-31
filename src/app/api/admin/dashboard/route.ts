@@ -8,6 +8,6 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const kpis = getDashboardKPIs();
+  const kpis = await getDashboardKPIs();
   return NextResponse.json(kpis);
 }

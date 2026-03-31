@@ -14,7 +14,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const script = getScriptById(id);
+  const script = await getScriptById(id);
   if (!script) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -25,7 +25,6 @@ export async function GET(
   const parsed: ParsedScript = JSON.parse(script.parsed_data);
   const emotions = detectAllEmotions(parsed.lines);
 
-  // Convert Map to plain object for JSON serialization
   const result: Record<string, unknown> = {};
   for (const [lineId, tag] of emotions) {
     result[lineId] = tag;

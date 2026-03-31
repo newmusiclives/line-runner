@@ -13,7 +13,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const annotations = getAnnotations(id, session.user.id);
+  const annotations = await getAnnotations(id, session.user.id);
   return NextResponse.json(annotations);
 }
 
@@ -34,7 +34,7 @@ export async function POST(
   }
 
   const { lineId, noteType, content } = parsed.data;
-  const annotationId = createAnnotation(session.user.id, id, lineId, noteType, content);
+  const annotationId = await createAnnotation(session.user.id, id, lineId, noteType, content);
 
   return NextResponse.json({ id: annotationId }, { status: 201 });
 }

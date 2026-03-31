@@ -22,13 +22,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!email || !password) return null;
 
         if (isRegister) {
-          const existing = getUserByEmail(email);
+          const existing = await getUserByEmail(email);
           if (existing) return null;
-          const user = createUser(email, name || email.split("@")[0], password);
+          const user = await createUser(email, name || email.split("@")[0], password);
           return { id: user.id, email: user.email, name: user.name, role: user.role };
         }
 
-        const user = getUserByEmail(email);
+        const user = await getUserByEmail(email);
         if (!user) return null;
         if (user.suspended_at) return null;
         if (!verifyPassword(user, password)) return null;
@@ -67,10 +67,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async signIn({ user, account }) {
       if (account?.provider === "google" && user.email) {
-        // Auto-create user for Google OAuth
-        const existing = getUserByEmail(user.email);
+        const existing = await getUserByEmail(user.email);
         if (!existing) {
-          createUser(user.email, user.name || user.email.split("@")[0]);
+          await createUser(user.email, user.name || user.email.split("@")[0]);
         }
       }
       return true;

@@ -13,7 +13,7 @@ export async function POST(
   }
 
   const { id } = await params;
-  const rehearsal = getSession(id);
+  const rehearsal = await getSession(id);
   if (!rehearsal) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -27,6 +27,6 @@ export async function POST(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  saveLineMetrics(id, parsed.data);
+  await saveLineMetrics(id, parsed.data);
   return NextResponse.json({ success: true }, { status: 201 });
 }

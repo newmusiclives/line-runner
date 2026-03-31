@@ -3,15 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3020",
+    "dev": "next dev --port 3050",
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migrate": "npx tsx scripts/migrate.ts",
+    "db:seed": "npx tsx scripts/seed.ts",
+    "db:setup": "npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@auth/core": "^0.41.0",
+    "@neondatabase/serverless": "^1.0.2",
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^12.8.0",
     "compromise": "^14.15.0",
     "date-fns": "^4.1.0",
     "nanoid": "^5.1.7",
@@ -27,13 +30,14 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

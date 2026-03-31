@@ -15,7 +15,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const sessions = listUserSessions(session.user.id);
+  const sessions = await listUserSessions(session.user.id);
   return NextResponse.json(sessions);
 }
 
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   }
 
   const { scriptId, myCharacter, linesTotal } = parsed.data;
-  const rehearsal = startSession(session.user.id, scriptId, myCharacter, linesTotal);
+  const rehearsal = await startSession(session.user.id, scriptId, myCharacter, linesTotal);
 
   return NextResponse.json(rehearsal, { status: 201 });
 }

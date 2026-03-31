@@ -15,59 +15,54 @@ export interface DbRehearsalSession {
   loop_count: number;
 }
 
-export function startSession(userId: string, scriptId: string, myCharacter: string, linesTotal: number): DbRehearsalSession {
-  const db = getDb();
+export async function startSession(userId: string, scriptId: string, myCharacter: string, linesTotal: number): Promise<DbRehearsalSession> {
+  const sql = getDb();
   const id = nanoid();
-  db.prepare(
-    `INSERT INTO rehearsal_sessions (id, user_id, script_id, my_character, lines_total) VALUES (?, ?, ?, ?, ?)`
-  ).run(id, userId, scriptId, myCharacter, linesTotal);
-  return db.prepare("SELECT * FROM rehearsal_sessions WHERE id = ?").get(id) as DbRehearsalSession;
+  await sql`INSERT INTO rehearsal_sessions (id, user_id, script_id, my_character, lines_total) VALUES (${id}, ${userId}, ${scriptId}, ${myCharacter}, ${linesTotal})`;
+  const rows = await sql`SELECT * FROM rehearsal_sessions WHERE id = ${id}`;
+  return rows[0] as DbRehearsalSession;
 }
 
-export function updateSession(id: string, updates: Partial<Pick<DbRehearsalSession, "ended_at" | "duration_secs" | "lines_completed" | "furthest_line" | "loop_count">>) {
-  const db = getDb();
-  const fields: string[] = [];
+export async function updateSession(id: string, updates: Partial<Pick<DbRehearsalSession, "ended_at" | "duration_secs" | "lines_completed" | "furthest_line" | "loop_count">>) {
+  const sql = getDb();
+  const setClauses: string[] = [];
   const values: unknown[] = [];
+  let paramIndex = 1;
 
   for (const [key, val] of Object.entries(updates)) {
     if (val !== undefined) {
-      fields.push(`${key} = ?`);
+      setClauses.push(`${key} = $${paramIndex++}`);
       values.push(val);
     }
   }
-  if (fields.length === 0) return;
+  if (setClauses.length === 0) return;
   values.push(id);
-  db.prepare(`UPDATE rehearsal_sessions SET ${fields.join(", ")} WHERE id = ?`).run(...values);
+  const query = `UPDATE rehearsal_sessions SET ${setClauses.join(", ")} WHERE id = $${paramIndex}`;
+  await (sql as any)(query, values);
 }
 
-export function getSession(id: string): DbRehearsalSession | null {
-  const db = getDb();
-  return db.prepare("SELECT * FROM rehearsal_sessions WHERE id = ?").get(id) as DbRehearsalSession | null;
+export async function getSession(id: string): Promise<DbRehearsalSession | null> {
+  const sql = getDb();
+  const rows = await sql`SELECT * FROM rehearsal_sessions WHERE id = ${id}`;
+  return (rows[0] as DbRehearsalSession) ?? null;
 }
 
-export function listUserSessions(userId: string, limit = 50): (DbRehearsalSession & { script_title?: string })[] {
-  const db = getDb();
-  return db.prepare(
-    `SELECT rs.*, s.title as script_title
+export async function listUserSessions(userId: string, limit = 50): Promise<(DbRehearsalSession & { script_title?: string })[]> {
+  const sql = getDb();
+  const rows = await sql`SELECT rs.*, s.title as script_title
      FROM rehearsal_sessions rs JOIN scripts s ON rs.script_id = s.id
-     WHERE rs.user_id = ? ORDER BY rs.started_at DESC LIMIT ?`
-  ).all(userId, limit) as (DbRehearsalSession & { script_title?: string })[];
+     WHERE rs.user_id = ${userId} ORDER BY rs.started_at DESC LIMIT ${limit}`;
+  return rows as (DbRehearsalSession & { script_title?: string })[];
 }
 
-export function saveLineMetrics(sessionId: string, metrics: { lineId: string; lineIndex: number; characterName: string; timingMs: number; skipped: boolean; replayed: boolean }[]) {
-  const db = getDb();
-  const stmt = db.prepare(
-    `INSERT INTO line_metrics (id, session_id, line_id, line_index, character_name, timing_ms, skipped, replayed) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-  const tx = db.transaction(() => {
-    for (const m of metrics) {
-      stmt.run(nanoid(), sessionId, m.lineId, m.lineIndex, m.characterName, m.timingMs, m.skipped ? 1 : 0, m.replayed ? 1 : 0);
-    }
-  });
-  tx();
+export async function saveLineMetrics(sessionId: string, metrics: { lineId: string; lineIndex: number; characterName: string; timingMs: number; skipped: boolean; replayed: boolean }[]) {
+  const sql = getDb();
+  for (const m of metrics) {
+    await sql`INSERT INTO line_metrics (id, session_id, line_id, line_index, character_name, timing_ms, skipped, replayed) VALUES (${nanoid()}, ${sessionId}, ${m.lineId}, ${m.lineIndex}, ${m.characterName}, ${m.timingMs}, ${m.skipped}, ${m.replayed})`;
+  }
 }
 
-export function getSessionMetrics(sessionId: string) {
-  const db = getDb();
-  return db.prepare("SELECT * FROM line_metrics WHERE session_id = ? ORDER BY line_index").all(sessionId);
+export async function getSessionMetrics(sessionId: string) {
+  const sql = getDb();
+  return await sql`SELECT * FROM line_metrics WHERE session_id = ${sessionId} ORDER BY line_index`;
 }

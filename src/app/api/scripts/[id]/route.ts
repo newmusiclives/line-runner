@@ -12,7 +12,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const script = getScriptById(id);
+  const script = await getScriptById(id);
   if (!script) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -36,7 +36,7 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const script = getScriptById(id);
+  const script = await getScriptById(id);
   if (!script) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -44,6 +44,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  deleteScript(id);
+  await deleteScript(id);
   return NextResponse.json({ success: true });
 }

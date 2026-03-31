@@ -10,29 +10,25 @@ export async function GET() {
   const userId = (session.user as { id?: string }).id;
   if (!userId) return NextResponse.json([]);
 
-  const db = getDb();
+  const sql = getDb();
 
-  // Get all scripts with their rehearsal stats
-  const scripts = db.prepare(`
+  const scripts = await sql`
     SELECT
-      s.id as scriptId,
-      s.title as scriptTitle,
+      s.id as "scriptId",
+      s.title as "scriptTitle",
       s.genre,
-      s.created_at as createdAt,
-      COUNT(DISTINCT rs.id) as sessionCount,
-      MAX(rs.started_at) as lastAccessed,
-      (SELECT COUNT(*) FROM self_tape_takes st WHERE st.script_id = s.id AND st.is_keeper = 1) as keeperTakes
+      s.created_at as "createdAt",
+      COUNT(DISTINCT rs.id) as "sessionCount",
+      MAX(rs.started_at) as "lastAccessed",
+      (SELECT COUNT(*) FROM self_tape_takes st WHERE st.script_id = s.id AND st.is_keeper = true) as "keeperTakes"
     FROM scripts s
-    LEFT JOIN rehearsal_sessions rs ON rs.script_id = s.id AND rs.user_id = ?
-    WHERE s.user_id = ? AND s.status = 'active'
-    GROUP BY s.id
-    ORDER BY MAX(rs.started_at) DESC, s.created_at DESC
-  `).all(userId, userId) as Array<{
-    scriptId: string; scriptTitle: string; genre: string | null;
-    createdAt: string; sessionCount: number; lastAccessed: string | null; keeperTakes: number;
-  }>;
+    LEFT JOIN rehearsal_sessions rs ON rs.script_id = s.id AND rs.user_id = ${userId}
+    WHERE s.user_id = ${userId} AND s.status = 'active'
+    GROUP BY s.id, s.title, s.genre, s.created_at
+    ORDER BY MAX(rs.started_at) DESC NULLS LAST, s.created_at DESC
+  `;
 
-  const items = scripts.map((s, i) => ({
+  const items = scripts.map((s: any, i: number) => ({
     id: `vault-${i}`,
     scriptId: s.scriptId,
     scriptTitle: s.scriptTitle,
@@ -41,8 +37,8 @@ export async function GET() {
     voiceConfig: null,
     lastAccessed: s.lastAccessed || s.createdAt,
     createdAt: s.createdAt,
-    sessionCount: s.sessionCount,
-    keeperTakes: s.keeperTakes,
+    sessionCount: Number(s.sessionCount),
+    keeperTakes: Number(s.keeperTakes),
   }));
 
   return NextResponse.json(items);

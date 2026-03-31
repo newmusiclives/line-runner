@@ -9,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const scripts = listUserScripts(session.user.id);
+  const scripts = await listUserScripts(session.user.id);
   const result = scripts.map((s) => ({
     ...s,
     parsed_data: JSON.parse(s.parsed_data),
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   }
 
   const { title, fileName, rawText, parsedData } = parsed.data;
-  const script = createScript(session.user.id, title, fileName, rawText, parsedData);
+  const script = await createScript(session.user.id, title, fileName, rawText, parsedData);
 
   return NextResponse.json(script, { status: 201 });
 }

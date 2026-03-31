@@ -14,7 +14,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const flags = getFeatureFlags();
+  const flags = await getFeatureFlags();
   return NextResponse.json(flags);
 }
 
@@ -31,7 +31,7 @@ export async function PUT(request: Request) {
   }
 
   const { key, enabled } = parsed.data;
-  setFeatureFlag(key, enabled);
+  await setFeatureFlag(key, enabled);
 
   return NextResponse.json({ success: true });
 }

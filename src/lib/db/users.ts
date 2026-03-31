@@ -14,26 +14,26 @@ export interface DbUser {
   suspended_at: string | null;
 }
 
-export function createUser(email: string, name: string, password?: string): DbUser {
-  const db = getDb();
+export async function createUser(email: string, name: string, password?: string): Promise<DbUser> {
+  const sql = getDb();
   const id = nanoid();
   const passwordHash = password ? bcrypt.hashSync(password, 10) : null;
 
-  db.prepare(
-    `INSERT INTO users (id, email, name, password_hash) VALUES (?, ?, ?, ?)`
-  ).run(id, email, name, passwordHash);
+  await sql`INSERT INTO users (id, email, name, password_hash) VALUES (${id}, ${email}, ${name}, ${passwordHash})`;
 
-  return getUserById(id)!;
+  return (await getUserById(id))!;
 }
 
-export function getUserById(id: string): DbUser | null {
-  const db = getDb();
-  return db.prepare("SELECT * FROM users WHERE id = ?").get(id) as DbUser | null;
+export async function getUserById(id: string): Promise<DbUser | null> {
+  const sql = getDb();
+  const rows = await sql`SELECT * FROM users WHERE id = ${id}`;
+  return (rows[0] as DbUser) ?? null;
 }
 
-export function getUserByEmail(email: string): DbUser | null {
-  const db = getDb();
-  return db.prepare("SELECT * FROM users WHERE email = ?").get(email) as DbUser | null;
+export async function getUserByEmail(email: string): Promise<DbUser | null> {
+  const sql = getDb();
+  const rows = await sql`SELECT * FROM users WHERE email = ${email}`;
+  return (rows[0] as DbUser) ?? null;
 }
 
 export function verifyPassword(user: DbUser, password: string): boolean {
@@ -41,27 +41,29 @@ export function verifyPassword(user: DbUser, password: string): boolean {
   return bcrypt.compareSync(password, user.password_hash);
 }
 
-export function updateUser(id: string, updates: Partial<Pick<DbUser, "name" | "avatar_url" | "role" | "suspended_at">>) {
-  const db = getDb();
-  const fields: string[] = [];
+export async function updateUser(id: string, updates: Partial<Pick<DbUser, "name" | "avatar_url" | "role" | "suspended_at">>) {
+  const sql = getDb();
+  const setClauses: string[] = [];
   const values: unknown[] = [];
+  let paramIndex = 1;
 
-  if (updates.name !== undefined) { fields.push("name = ?"); values.push(updates.name); }
-  if (updates.avatar_url !== undefined) { fields.push("avatar_url = ?"); values.push(updates.avatar_url); }
-  if (updates.role !== undefined) { fields.push("role = ?"); values.push(updates.role); }
-  if (updates.suspended_at !== undefined) { fields.push("suspended_at = ?"); values.push(updates.suspended_at); }
+  if (updates.name !== undefined) { setClauses.push(`name = $${paramIndex++}`); values.push(updates.name); }
+  if (updates.avatar_url !== undefined) { setClauses.push(`avatar_url = $${paramIndex++}`); values.push(updates.avatar_url); }
+  if (updates.role !== undefined) { setClauses.push(`role = $${paramIndex++}`); values.push(updates.role); }
+  if (updates.suspended_at !== undefined) { setClauses.push(`suspended_at = $${paramIndex++}`); values.push(updates.suspended_at); }
 
-  if (fields.length === 0) return;
-  fields.push("updated_at = datetime('now')");
+  if (setClauses.length === 0) return;
+  setClauses.push("updated_at = NOW()");
   values.push(id);
 
-  db.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).run(...values);
+  const query = `UPDATE users SET ${setClauses.join(", ")} WHERE id = $${paramIndex}`;
+  await (sql as any)(query, values);
 }
 
-export function listUsers(page = 1, limit = 50): { users: DbUser[]; total: number } {
-  const db = getDb();
+export async function listUsers(page = 1, limit = 50): Promise<{ users: DbUser[]; total: number }> {
+  const sql = getDb();
   const offset = (page - 1) * limit;
-  const users = db.prepare("SELECT * FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?").all(limit, offset) as DbUser[];
-  const { total } = db.prepare("SELECT COUNT(*) as total FROM users").get() as { total: number };
-  return { users, total };
+  const users = await sql`SELECT * FROM users ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+  const totalRow = await sql`SELECT COUNT(*) as total FROM users`;
+  return { users: users as DbUser[], total: Number(totalRow[0].total) };
 }
