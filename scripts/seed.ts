@@ -157,11 +157,11 @@ async function seed() {
 
     // Sample subscriptions
     const plans: [string, string, string, number, string, number, number, number][] = [
-      ["sub-002", "user-002", "monthly", 3000, "monthly", 500, 25, -15],
+      ["sub-002", "user-002", "monthly", 2000, "monthly", 500, 25, -15],
       ["sub-003", "user-003", "studio", 9000, "monthly", 500, 25, -10],
       ["sub-004", "user-004", "studio", 9000, "monthly", 500, 25, -5],
       ["sub-005", "user-005", "free", 0, "monthly", 15, 3, -20],
-      ["sub-006", "user-006", "monthly", 3000, "monthly", 500, 25, -2],
+      ["sub-006", "user-006", "monthly", 2000, "monthly", 500, 25, -2],
     ];
     for (const [id, userId, planId, cents, period, mins, voices, daysAgo] of plans) {
       const startDate = new Date(); startDate.setDate(startDate.getDate() + daysAgo);

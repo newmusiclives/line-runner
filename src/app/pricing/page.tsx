@@ -128,7 +128,7 @@ export default function PricingPage() {
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold px-4 py-1 rounded-full">MOST POPULAR</div>
           <h3 className="text-2xl font-bold mb-1">Pro</h3>
           <p className="text-sm text-muted mb-5">For working actors who rehearse regularly</p>
-          <div className="text-4xl font-bold mb-1">$30</div>
+          <div className="text-4xl font-bold mb-1">$20</div>
           <div className="text-sm text-muted mb-6">per month</div>
 
           <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 mb-5 text-center">

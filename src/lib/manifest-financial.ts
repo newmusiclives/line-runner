@@ -3,12 +3,11 @@ import { PricingPlan } from "@/types";
 // ── ElevenLabs cost model ──────────────────────────────────────────
 // 1 credit = 1 character of text-to-speech
 // ~1,000 credits = ~1 minute of generated audio
-// Flash/Turbo API: $0.06 per 1,000 credits
-// Multilingual v2 API: $0.12 per 1,000 credits
-// Blended cost basis: ~$0.08 per 1,000 credits
+// ElevenLabs plans: $22/mo = 100K credits, $99/mo = 500K credits
+// Cost per 1K credits on $99 plan: $0.198
 // ────────────────────────────────────────────────────────────────────
 
-const COST_PER_1K_CREDITS = 0.08;
+const COST_PER_1K_CREDITS = 0.198;
 
 export function estimateCreditCost(credits: number): number {
   return (credits / 1000) * COST_PER_1K_CREDITS;
@@ -41,7 +40,7 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: "monthly",
     name: "Pro",
-    price: 30,
+    price: 20,
     period: "monthly",
     description: "50,000 credits/month — unlimited rehearsals with full voice customisation, all modes, AI coaching, and recording tools",
     features: [
