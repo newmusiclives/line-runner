@@ -1,0 +1,18 @@
+{
+  "name": "Line Runner",
+  "short_name": "LineRunner",
+  "description": "AI Script Rehearsal - Remote Control",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f13",
+  "theme_color": "#6c5ce7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["entertainment", "productivity"]
+}

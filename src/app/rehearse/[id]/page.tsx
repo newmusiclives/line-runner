@@ -21,17 +21,41 @@ import RelationshipDynamicsPanel from "@/components/rehearsal/RelationshipDynami
 import EmotionalArcChart from "@/components/rehearsal/EmotionalArcChart";
 import PreAuditionRitual from "@/components/rehearsal/PreAuditionRitual";
 
+// Mode components
+import MemorizationMode from "@/components/rehearsal/MemorizationMode";
+import SpeedRunMode from "@/components/rehearsal/SpeedRunMode";
+import CueOnlyMode from "@/components/rehearsal/CueOnlyMode";
+import TeleprompterMode from "@/components/rehearsal/TeleprompterMode";
+import BackstageMode from "@/components/rehearsal/BackstageMode";
+import ColdReadMode from "@/components/rehearsal/ColdReadMode";
+import WildcardMode from "@/components/rehearsal/WildcardMode";
+import SubtextModeView from "@/components/rehearsal/SubtextModeView";
+import SleepLearningMode from "@/components/rehearsal/SleepLearningMode";
+
+// Control components
+import PlaybackControls from "@/components/rehearsal/PlaybackControls";
+import TimingControls from "@/components/rehearsal/TimingControls";
+import type { TimingSettings } from "@/components/rehearsal/TimingControls";
+import RemoteControlPanel from "@/components/rehearsal/RemoteControlPanel";
+
 export default function RehearsePage() {
   const router = useRouter();
   const [session, setSession] = useState<RehearsalSession | null>(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [waitingForUser, setWaitingForUser] = useState(false);
-  const [pauseDuration, setPauseDuration] = useState(3);
   const [autoAdvance, setAutoAdvance] = useState(true);
   const voiceEngineRef = useRef<BrowserVoiceEngine | null>(null);
   const currentLineRef = useRef<HTMLDivElement>(null);
   const isPlayingRef = useRef(false);
+  const isPausedRef = useRef(false);
+
+  // Timing settings
+  const [timingSettings, setTimingSettings] = useState<TimingSettings>({
+    pauseDuration: 2,
+    playbackSpeed: 1.0,
+  });
 
   // Feature states
   const [mode, setMode] = useState<RehearsalMode>("standard");
@@ -45,6 +69,8 @@ export default function RehearsePage() {
   const [showEmotionalArc, setShowEmotionalArc] = useState(false);
   const [showRitual, setShowRitual] = useState(false);
   const [showToolbar, setShowToolbar] = useState(true);
+  const [showTimingControls, setShowTimingControls] = useState(false);
+  const [showRemotePanel, setShowRemotePanel] = useState(false);
 
   // Feature data
   const [analysis, setAnalysis] = useState<ScriptAnalysis | null>(null);
@@ -60,21 +86,26 @@ export default function RehearsePage() {
   const [sceneComplete, setSceneComplete] = useState(false);
   const lineStartTimeRef = useRef(0);
 
-  // Stumble tracking (Feature 05)
+  // Speed run score
+  const [speedRunScore, setSpeedRunScore] = useState<{ averageTime: number; fastest: number; slowest: number; linesUnder2s: number; totalLines: number; times: number[] } | null>(null);
+
+  // Stumble tracking
   const [stumbleData] = useState<Map<string, { lineId: string; count: number; severity: "clean" | "amber" | "red" }>>(new Map());
+
+  // BroadcastChannel for remote control
+  const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastCommandTimestampRef = useRef(0);
 
   useEffect(() => {
     const data = sessionStorage.getItem("rehearsal-session");
     if (data) {
       const parsed = JSON.parse(data) as RehearsalSession;
       setSession(parsed);
-      // Run analysis on load (Feature 04)
       const a = analyzeScript(parsed.script.lines, parsed.script.characters);
       setAnalysis(a);
-      // Detect emotions for all lines
       const emo = detectAllEmotions(parsed.script.lines);
       setEmotions(emo);
-      // Generate director notes
       const dn = generateDirectorNotes(parsed.script.lines, emo, parsed.myCharacter);
       setDirectorNotes(dn);
     } else {
@@ -89,6 +120,13 @@ export default function RehearsePage() {
     return () => { voiceEngineRef.current?.stop(); };
   }, []);
 
+  // Register service worker for PWA
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
+
   useEffect(() => {
     if (currentLineRef.current) {
       currentLineRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -96,6 +134,61 @@ export default function RehearsePage() {
   }, [currentLineIndex]);
 
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+
+  // Use a ref for the remote command handler to avoid stale closures
+  const remoteCommandRef = useRef<(command: string) => void>(() => {});
+
+  // BroadcastChannel listener for remote control
+  useEffect(() => {
+    if (!session) return;
+
+    try {
+      const bc = new BroadcastChannel(`rehearsal-${session.id}`);
+      broadcastChannelRef.current = bc;
+
+      bc.onmessage = (event) => {
+        if (event.data.type === "command") {
+          remoteCommandRef.current(event.data.command);
+        }
+        if (event.data.type === "request-status") {
+          bc.postMessage({
+            type: "status",
+            isPlaying: isPlayingRef.current,
+            isPaused: isPausedRef.current,
+          });
+        }
+      };
+
+      return () => bc.close();
+    } catch {
+      // BroadcastChannel not available
+    }
+  }, [session]);
+
+  // Polling for remote control commands (cross-device)
+  useEffect(() => {
+    if (!session) return;
+
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/rehearsals/${session.id}/control?since=${lastCommandTimestampRef.current}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.command && data.timestamp > lastCommandTimestampRef.current) {
+            lastCommandTimestampRef.current = data.timestamp;
+            remoteCommandRef.current(data.command);
+          }
+        }
+      } catch {
+        // Silently fail
+      }
+    }, 1000);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [session]);
 
   const getVoiceForCharacter = useCallback((characterName: string): VoiceAssignment | undefined => {
     return session?.voiceAssignments.find((va) => va.characterName === characterName);
@@ -114,7 +207,6 @@ export default function RehearsePage() {
           lineId: currentLine.id, lineIndex: currentLineIndex,
           characterName: currentLine.character || "", timingMs, skipped: false, replayed: false,
         }]);
-        // Emotional arc point
         const emo = emotions.get(currentLine.id);
         if (emo) {
           setArcPoints((prev) => [...prev, {
@@ -130,8 +222,8 @@ export default function RehearsePage() {
       const next = prev + 1;
       if (next >= dialogueLines.length) {
         setIsPlaying(false);
+        setIsPaused(false);
         setSceneComplete(true);
-        // Generate coach notes (Feature 01)
         if (lineMetrics.length > 0 && session) {
           const notes = generatePerformanceNotes(session.script.lines, lineMetrics, emotions, session.myCharacter, session.id);
           setCoachNotes(notes);
@@ -149,7 +241,6 @@ export default function RehearsePage() {
     const assignment = getVoiceForCharacter(line.character);
     if (!assignment) return;
 
-    // Apply emotion-based voice adjustment
     const emo = emotions.get(line.id);
     let adjustedAssignment = { ...assignment };
     if (emo) {
@@ -157,7 +248,7 @@ export default function RehearsePage() {
       adjustedAssignment = { ...assignment, pitch: assignment.pitch + adj.pitchDelta, rate: assignment.rate + adj.rateDelta };
     }
 
-    // Apply wildcard modifier (Feature 08)
+    // Apply wildcard modifier
     if (mode === "wildcard" && wildcardModifier) {
       const modifierAdjustments: Record<string, { pitchDelta: number; rateDelta: number }> = {
         distracted: { pitchDelta: -0.05, rateDelta: 0.15 },
@@ -177,14 +268,20 @@ export default function RehearsePage() {
       adjustedAssignment = { ...adjustedAssignment, pitch: adjustedAssignment.pitch + modAdj.pitchDelta, rate: adjustedAssignment.rate + modAdj.rateDelta };
     }
 
+    // Apply timing speed to rate
+    adjustedAssignment = { ...adjustedAssignment, rate: adjustedAssignment.rate * timingSettings.playbackSpeed };
+
     voiceEngineRef.current.speak(line.text, adjustedAssignment, () => {
-      if (isPlayingRef.current) advanceLine();
+      if (isPlayingRef.current && !isPausedRef.current) advanceLine();
     });
-  }, [getVoiceForCharacter, advanceLine, emotions, mode, wildcardModifier]);
+  }, [getVoiceForCharacter, advanceLine, emotions, mode, wildcardModifier, timingSettings.playbackSpeed]);
 
   // Handle line changes during playback
   useEffect(() => {
-    if (!session || !isPlaying) return;
+    if (!session || !isPlaying || isPaused) return;
+    // Skip for modes that handle their own playback
+    if (mode === "speed-run" || mode === "sleep-learning" || mode === "teleprompter") return;
+
     const currentLine = dialogueLines[currentLineIndex];
     if (!currentLine) return;
 
@@ -193,44 +290,113 @@ export default function RehearsePage() {
       voiceEngineRef.current?.stop();
       lineStartTimeRef.current = Date.now();
       if (autoAdvance) {
-        const timeout = setTimeout(() => { setWaitingForUser(false); advanceLine(); }, pauseDuration * 1000);
+        const timeout = setTimeout(() => {
+          if (!isPausedRef.current) {
+            setWaitingForUser(false);
+            advanceLine();
+          }
+        }, timingSettings.pauseDuration * 1000);
         return () => clearTimeout(timeout);
       }
     } else {
       setWaitingForUser(false);
       lineStartTimeRef.current = Date.now();
+
+      // Backstage mode: always speak (that is its entire point)
+      // Cue-only mode: speak but show minimal text (handled in component)
       speakLine(currentLine);
     }
-  }, [currentLineIndex, isPlaying, session, autoAdvance, pauseDuration, speakLine, advanceLine, dialogueLines]);
+  }, [currentLineIndex, isPlaying, isPaused, session, autoAdvance, timingSettings.pauseDuration, speakLine, advanceLine, dialogueLines, mode]);
+
+  // Play/Pause/Stop handlers
+  const handlePlay = useCallback(() => {
+    if (mode === "wildcard") {
+      const available = WILDCARD_MODIFIERS.filter((m) => m !== wildcardModifier);
+      setWildcardModifier(available[Math.floor(Math.random() * available.length)]);
+    }
+    lineStartTimeRef.current = Date.now();
+    setSceneComplete(false);
+    setIsPaused(false);
+    setIsPlaying(true);
+
+    // Send status to remote
+    broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: true, isPaused: false });
+  }, [mode, wildcardModifier]);
+
+  const handlePause = useCallback(() => {
+    voiceEngineRef.current?.pause();
+    setIsPaused(true);
+    broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: true, isPaused: true });
+  }, []);
+
+  const handleResume = useCallback(() => {
+    voiceEngineRef.current?.resume();
+    setIsPaused(false);
+    broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: true, isPaused: false });
+  }, []);
+
+  const handleStop = useCallback(() => {
+    voiceEngineRef.current?.stop();
+    setIsPlaying(false);
+    setIsPaused(false);
+    setWaitingForUser(false);
+    broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: false, isPaused: false });
+  }, []);
 
   const togglePlay = () => {
-    if (isPlaying) {
-      voiceEngineRef.current?.stop();
-      setIsPlaying(false);
+    if (isPlaying && !isPaused) {
+      handlePause();
+    } else if (isPaused) {
+      handleResume();
     } else {
-      // Wildcard: pick random modifier (Feature 08)
-      if (mode === "wildcard") {
-        const available = WILDCARD_MODIFIERS.filter((m) => m !== wildcardModifier);
-        setWildcardModifier(available[Math.floor(Math.random() * available.length)]);
-      }
-      lineStartTimeRef.current = Date.now();
-      setSceneComplete(false);
-      setIsPlaying(true);
+      handlePlay();
     }
   };
 
-  const skipLine = () => { voiceEngineRef.current?.stop(); setWaitingForUser(false); advanceLine(); };
-  const goBack = () => { voiceEngineRef.current?.stop(); setWaitingForUser(false); setCurrentLineIndex((prev) => Math.max(0, prev - 1)); };
-  const restart = () => {
-    voiceEngineRef.current?.stop(); setWaitingForUser(false); setCurrentLineIndex(0);
-    setIsPlaying(false); setSceneComplete(false); setLineMetrics([]); setArcPoints([]);
+  const skipLine = useCallback(() => {
+    voiceEngineRef.current?.stop();
+    setWaitingForUser(false);
+    advanceLine();
+  }, [advanceLine]);
+
+  const goBack = useCallback(() => {
+    voiceEngineRef.current?.stop();
+    setWaitingForUser(false);
+    setCurrentLineIndex((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const restart = useCallback(() => {
+    voiceEngineRef.current?.stop();
+    setWaitingForUser(false);
+    setCurrentLineIndex(0);
+    setIsPlaying(false);
+    setIsPaused(false);
+    setSceneComplete(false);
+    setLineMetrics([]);
+    setArcPoints([]);
+    setSpeedRunScore(null);
     if (mode === "wildcard") setWildcardModifier(null);
-  };
+    broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: false, isPaused: false });
+  }, [mode]);
+
+  // Keep remote command ref up to date with latest handlers
+  useEffect(() => {
+    remoteCommandRef.current = (command: string) => {
+      switch (command) {
+        case "play": handlePlay(); break;
+        case "pause": handlePause(); break;
+        case "resume": handleResume(); break;
+        case "stop": handleStop(); break;
+        case "restart": restart(); break;
+        case "next": skipLine(); break;
+        case "prev": goBack(); break;
+      }
+    };
+  }, [handlePlay, handlePause, handleResume, handleStop, restart, skipLine, goBack]);
 
   const handleModeChange = (newMode: RehearsalMode) => {
     setMode(newMode);
     restart();
-    if (newMode === "teleprompter" && session) { router.push(`/rehearse/${session.id}/teleprompter`); }
   };
 
   if (!session) {
@@ -239,19 +405,208 @@ export default function RehearsePage() {
 
   // Ritual mode check
   if (showRitual) {
-    return <PreAuditionRitual onComplete={() => { setShowRitual(false); setIsPlaying(true); lineStartTimeRef.current = Date.now(); }} onSkip={() => setShowRitual(false)} />;
+    return <PreAuditionRitual onComplete={() => { setShowRitual(false); handlePlay(); }} onSkip={() => setShowRitual(false)} />;
   }
 
   const progress = dialogueLines.length > 0 ? ((currentLineIndex + 1) / dialogueLines.length) * 100 : 0;
   const characterNames = session.script.characters.map((c) => c.name);
   const currentLine = dialogueLines[currentLineIndex];
-  const currentDirectorNote = currentLine ? directorNotes.find((n) => n.lineId === currentLine.id) : null;
-  const currentSubtext = currentLine?.character ? subtextConfigs.find((s) => s.characterName === currentLine.character) : null;
 
-  // Cold read mode: only show current and previous lines (Feature 10)
-  const isColdRead = mode === "cold-read";
-  // Sleep learning mode: slow auto-advance
-  const isSleepMode = mode === "sleep-learning";
+
+  // ─── Render mode-specific content ───────────────────────────
+  const renderModeContent = () => {
+    switch (mode) {
+      case "memorization":
+        return (
+          <MemorizationMode
+            lines={session.script.lines}
+            myCharacter={session.myCharacter}
+            currentLineIndex={currentLineIndex}
+          />
+        );
+
+      case "speed-run":
+        return (
+          <SpeedRunMode
+            lines={session.script.lines}
+            myCharacter={session.myCharacter}
+            onComplete={(score) => {
+              setSpeedRunScore(score);
+              setSceneComplete(true);
+            }}
+          />
+        );
+
+      case "cue-only":
+        return (
+          <CueOnlyMode
+            lines={session.script.lines}
+            myCharacter={session.myCharacter}
+            currentLineIndex={currentLineIndex}
+          />
+        );
+
+      case "teleprompter":
+        return (
+          <TeleprompterMode
+            lines={session.script.lines}
+            myCharacter={session.myCharacter}
+            isPlaying={isPlaying}
+            isPaused={isPaused}
+          />
+        );
+
+      case "backstage":
+        return (
+          <BackstageMode
+            lines={session.script.lines}
+            myCharacter={session.myCharacter}
+            currentLineIndex={currentLineIndex}
+            isPlaying={isPlaying}
+            waitingForUser={waitingForUser}
+            totalLines={dialogueLines.length}
+          />
+        );
+
+      case "cold-read":
+        return (
+          <ColdReadMode
+            lines={session.script.lines}
+            myCharacter={session.myCharacter}
+            currentLineIndex={currentLineIndex}
+            waitingForUser={waitingForUser}
+          />
+        );
+
+      case "wildcard":
+        return (
+          <WildcardMode
+            lines={session.script.lines}
+            myCharacter={session.myCharacter}
+            currentLineIndex={currentLineIndex}
+            waitingForUser={waitingForUser}
+            modifier={wildcardModifier}
+          />
+        );
+
+      case "subtext":
+        return (
+          <SubtextModeView
+            lines={session.script.lines}
+            myCharacter={session.myCharacter}
+            currentLineIndex={currentLineIndex}
+            waitingForUser={waitingForUser}
+            subtextConfigs={subtextConfigs}
+          />
+        );
+
+      case "sleep-learning":
+        return (
+          <SleepLearningMode
+            lines={session.script.lines}
+            myCharacter={session.myCharacter}
+            voiceAssignments={session.voiceAssignments}
+            onExit={() => handleModeChange("standard")}
+          />
+        );
+
+      // Standard mode (default)
+      case "standard":
+      default:
+        return renderStandardView();
+    }
+  };
+
+  // Standard view (the default script display)
+  const renderStandardView = () => (
+    <div className="space-y-2">
+      {dialogueLines.map((line, index) => {
+        const isCurrentLine = index === currentLineIndex;
+        const isMyLine = line.character === session.myCharacter;
+        const isDone = index < currentLineIndex;
+        const emotion = emotions.get(line.id);
+        const dirNote = directorNotes.find((n) => n.lineId === line.id);
+        const lineSubtext = line.character ? subtextConfigs.find((s) => s.characterName === line.character) : null;
+
+        return (
+          <div
+            key={line.id}
+            ref={isCurrentLine ? currentLineRef : undefined}
+            className={`rounded-xl p-4 transition-all cursor-pointer ${
+              isCurrentLine ? (isMyLine ? "line-my-turn" : "line-active") : isDone ? "line-done" : ""
+            } ${lineSubtext ? "subtext-active" : ""} hover:bg-surface-light/50`}
+            onClick={() => { voiceEngineRef.current?.stop(); setCurrentLineIndex(index); }}
+          >
+            <div className="flex items-start gap-3">
+              {emotion && emotion.emotion !== "neutral" && (
+                <div className="w-2 h-2 rounded-full mt-2 shrink-0" style={{ backgroundColor: EMOTION_COLORS[emotion.emotion] }} title={emotion.emotion} />
+              )}
+              <div className={`text-sm font-bold uppercase tracking-wide pt-0.5 w-24 shrink-0 ${isMyLine ? "text-success" : "text-accent-light"}`}>
+                {line.character}
+                {isMyLine && <span className="block text-xs font-normal opacity-70 normal-case">(You)</span>}
+              </div>
+              <div className="flex-1">
+                <p className={`text-base leading-relaxed ${isDone ? "text-muted" : "text-foreground"}`}>
+                  {line.text}
+                </p>
+                {lineSubtext && (
+                  <p className="text-xs text-pink-400 mt-1 italic">Subtext: {lineSubtext.subtextTag}</p>
+                )}
+                {isCurrentLine && dirNote && (
+                  <div className="mt-2 bg-accent/5 border border-accent/20 rounded-lg px-3 py-2 text-xs text-muted">
+                    <span className="text-accent-light font-medium uppercase tracking-wide text-[10px]">{dirNote.category}</span>
+                    <p className="mt-0.5">{dirNote.suggestion}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {isCurrentLine && isMyLine && waitingForUser && (
+              <div className="mt-3 ml-9 flex items-center gap-3">
+                <div className="flex items-center gap-1.5 text-sm text-success">
+                  <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
+                  Your line — speak now
+                </div>
+                {!autoAdvance && (
+                  <button onClick={(e) => { e.stopPropagation(); setWaitingForUser(false); advanceLine(); }} className="text-sm bg-success/20 text-success px-3 py-1 rounded-full hover:bg-success/30 transition-colors">
+                    Done
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Scene Complete */}
+      {sceneComplete && (
+        <div className="text-center py-12">
+          <div className="text-2xl font-bold mb-2">Scene Complete!</div>
+          {wildcardModifier && mode === "wildcard" && (
+            <div className="mb-4">
+              <span className="inline-block bg-warning/15 text-warning text-sm font-medium px-4 py-2 rounded-full">
+                Wildcard modifier: <span className="font-bold">{wildcardModifier}</span>
+              </span>
+            </div>
+          )}
+          <p className="text-muted mb-6">Great rehearsal. The AI Performance Coach has notes for you.</p>
+          <div className="flex items-center justify-center gap-3">
+            <button onClick={() => { if (coachNotes.length > 0) setShowCoach(true); else restart(); }} className="bg-accent hover:bg-accent-dark text-white font-medium px-6 py-2.5 rounded-xl transition-colors">
+              {coachNotes.length > 0 ? "View Coach Notes" : "Run Again"}
+            </button>
+            <button onClick={() => { if (arcPoints.length > 0) setShowEmotionalArc(true); }} className="bg-surface-light hover:bg-border text-foreground font-medium px-6 py-2.5 rounded-xl transition-colors" disabled={arcPoints.length === 0}>
+              View Emotional Arc
+            </button>
+            <button onClick={restart} className="text-sm text-muted hover:text-foreground">Restart</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Check if the mode handles its own layout (no script view wrapper needed)
+  const isFullscreenMode = mode === "teleprompter";
+  // Sleep learning renders as a fixed overlay, so it doesn't need special layout handling
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -264,7 +619,8 @@ export default function RehearsePage() {
               Playing as <span className="text-success font-medium">{session.myCharacter}</span>
               {" "}&middot; Line {currentLineIndex + 1} of {dialogueLines.length}
               {mode !== "standard" && <span className="ml-2 text-accent-light capitalize">({mode.replace("-", " ")})</span>}
-              {wildcardModifier && mode === "wildcard" && sceneComplete && <span className="ml-2 text-warning">Modifier: {wildcardModifier}</span>}
+              {isPaused && <span className="ml-2 text-warning">(Paused)</span>}
+              {wildcardModifier && mode === "wildcard" && <span className="ml-2 text-warning">Modifier: {wildcardModifier}</span>}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -273,15 +629,12 @@ export default function RehearsePage() {
                 <input type="checkbox" checked={autoAdvance} onChange={(e) => setAutoAdvance(e.target.checked)} className="accent-accent" />
                 Auto
               </label>
-              {autoAdvance && (
-                <select value={pauseDuration} onChange={(e) => setPauseDuration(parseInt(e.target.value))} className="bg-surface-light border border-border rounded px-2 py-1 text-xs">
-                  <option value={2}>2s</option><option value={3}>3s</option><option value={5}>5s</option><option value={8}>8s</option><option value={10}>10s</option>
-                  {isSleepMode && <><option value={15}>15s</option><option value={20}>20s</option></>}
-                </select>
-              )}
             </div>
             <button onClick={() => setShowModeSelector(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors text-muted hover:text-foreground">
               Mode
+            </button>
+            <button onClick={() => setShowTimingControls(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors text-muted hover:text-foreground">
+              Timing
             </button>
             <button onClick={() => router.push("/upload")} className="text-xs text-muted hover:text-foreground">New Script</button>
           </div>
@@ -297,25 +650,25 @@ export default function RehearsePage() {
       {showToolbar && (
         <div className="bg-surface/50 border-b border-border px-4 py-2">
           <div className="max-w-5xl mx-auto flex items-center gap-2 overflow-x-auto">
-            <button onClick={() => analysis && setShowAnalysis(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap" title="Script Analysis">
+            <button onClick={() => analysis && setShowAnalysis(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
               Analysis
             </button>
-            <button onClick={() => setShowMemoryTracker(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap" title="Line Memory">
+            <button onClick={() => setShowMemoryTracker(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
               Memory
             </button>
-            <button onClick={() => setShowSubtext(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap" title="Subtext Mode">
+            <button onClick={() => setShowSubtext(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
               Subtext {subtextConfigs.length > 0 && <span className="ml-1 w-1.5 h-1.5 bg-accent rounded-full inline-block" />}
             </button>
-            <button onClick={() => setShowObjective(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap" title="Objective & Obstacle">
+            <button onClick={() => setShowObjective(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
               Objective {objectiveConfigs.length > 0 && <span className="ml-1 w-1.5 h-1.5 bg-accent rounded-full inline-block" />}
             </button>
-            <button onClick={() => setShowRelationship(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap" title="Relationship Dynamics">
+            <button onClick={() => setShowRelationship(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
               Dynamics {relationshipConfigs.length > 0 && <span className="ml-1 w-1.5 h-1.5 bg-accent rounded-full inline-block" />}
             </button>
-            <button onClick={() => { if (arcPoints.length > 0) setShowEmotionalArc(true); }} className={`text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${arcPoints.length === 0 ? "opacity-50" : ""}`} title="Emotional Arc">
+            <button onClick={() => { if (arcPoints.length > 0) setShowEmotionalArc(true); }} className={`text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${arcPoints.length === 0 ? "opacity-50" : ""}`}>
               Arc
             </button>
-            <button onClick={() => setShowRitual(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap" title="Pre-Audition Ritual">
+            <button onClick={() => setShowRitual(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
               Ritual
             </button>
             <div className="flex-1" />
@@ -329,120 +682,38 @@ export default function RehearsePage() {
         </button>
       )}
 
-      {/* Script View */}
-      <div className="flex-1 overflow-y-auto py-6">
-        <div className="max-w-3xl mx-auto px-4 space-y-2">
-          {dialogueLines.map((line, index) => {
-            const isCurrentLine = index === currentLineIndex;
-            const isMyLine = line.character === session.myCharacter;
-            const isDone = index < currentLineIndex;
-            const emotion = emotions.get(line.id);
-            const dirNote = directorNotes.find((n) => n.lineId === line.id);
-            const lineSubtext = line.character ? subtextConfigs.find((s) => s.characterName === line.character) : null;
-
-            // Cold Read: hide future lines (Feature 10)
-            if (isColdRead && index > currentLineIndex) return null;
-
-            return (
-              <div
-                key={line.id}
-                ref={isCurrentLine ? currentLineRef : undefined}
-                className={`rounded-xl p-4 transition-all cursor-pointer ${
-                  isCurrentLine ? (isMyLine ? "line-my-turn" : "line-active") : isDone ? "line-done" : ""
-                } ${lineSubtext ? "subtext-active" : ""} hover:bg-surface-light/50`}
-                onClick={() => { voiceEngineRef.current?.stop(); setCurrentLineIndex(index); }}
-              >
-                <div className="flex items-start gap-3">
-                  {/* Emotion dot */}
-                  {emotion && emotion.emotion !== "neutral" && (
-                    <div className="w-2 h-2 rounded-full mt-2 shrink-0" style={{ backgroundColor: EMOTION_COLORS[emotion.emotion] }} title={emotion.emotion} />
-                  )}
-                  <div className={`text-sm font-bold uppercase tracking-wide pt-0.5 w-24 shrink-0 ${isMyLine ? "text-success" : "text-accent-light"}`}>
-                    {line.character}
-                    {isMyLine && <span className="block text-xs font-normal opacity-70 normal-case">(You)</span>}
-                  </div>
-                  <div className="flex-1">
-                    <p className={`text-base leading-relaxed ${isDone ? "text-muted" : "text-foreground"}`}>
-                      {line.text}
-                    </p>
-                    {/* Subtext indicator */}
-                    {lineSubtext && (
-                      <p className="text-xs text-pink-400 mt-1 italic">Subtext: {lineSubtext.subtextTag}</p>
-                    )}
-                    {/* Director note */}
-                    {isCurrentLine && dirNote && (
-                      <div className="mt-2 bg-accent/5 border border-accent/20 rounded-lg px-3 py-2 text-xs text-muted">
-                        <span className="text-accent-light font-medium uppercase tracking-wide text-[10px]">{dirNote.category}</span>
-                        <p className="mt-0.5">{dirNote.suggestion}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {isCurrentLine && isMyLine && waitingForUser && (
-                  <div className="mt-3 ml-9 flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 text-sm text-success">
-                      <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                      Your line — speak now
-                    </div>
-                    {!autoAdvance && (
-                      <button onClick={(e) => { e.stopPropagation(); setWaitingForUser(false); advanceLine(); }} className="text-sm bg-success/20 text-success px-3 py-1 rounded-full hover:bg-success/30 transition-colors">
-                        Done
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Scene Complete */}
-          {sceneComplete && (
-            <div className="text-center py-12">
-              <div className="text-2xl font-bold mb-2">Scene Complete!</div>
-              {wildcardModifier && mode === "wildcard" && (
-                <div className="mb-4 wildcard-reveal">
-                  <span className="inline-block bg-warning/15 text-warning text-sm font-medium px-4 py-2 rounded-full">
-                    Wildcard modifier: <span className="font-bold">{wildcardModifier}</span>
-                  </span>
-                </div>
-              )}
-              <p className="text-muted mb-6">Great rehearsal. The AI Performance Coach has notes for you.</p>
-              <div className="flex items-center justify-center gap-3">
-                <button onClick={() => { if (coachNotes.length > 0) setShowCoach(true); else restart(); }} className="bg-accent hover:bg-accent-dark text-white font-medium px-6 py-2.5 rounded-xl transition-colors">
-                  {coachNotes.length > 0 ? "View Coach Notes" : "Run Again"}
-                </button>
-                <button onClick={() => { if (arcPoints.length > 0) setShowEmotionalArc(true); }} className="bg-surface-light hover:bg-border text-foreground font-medium px-6 py-2.5 rounded-xl transition-colors" disabled={arcPoints.length === 0}>
-                  View Emotional Arc
-                </button>
-                <button onClick={restart} className="text-sm text-muted hover:text-foreground">Restart</button>
-              </div>
-            </div>
-          )}
+      {/* Script View / Mode Content */}
+      {isFullscreenMode ? (
+        renderModeContent()
+      ) : (
+        <div className="flex-1 overflow-y-auto py-6">
+          <div className="max-w-3xl mx-auto px-4">
+            {renderModeContent()}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Control Bar */}
-      <div className="bg-surface border-t border-border px-4 py-4">
-        <div className="max-w-3xl mx-auto flex items-center justify-center gap-4">
-          <button onClick={restart} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors" title="Restart">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" /></svg>
-          </button>
-          <button onClick={goBack} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors" title="Previous"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></button>
-          <button onClick={togglePlay} className="w-14 h-14 flex items-center justify-center rounded-full bg-accent hover:bg-accent-dark transition-colors shadow-lg shadow-accent/25" title={isPlaying ? "Pause" : "Play"}>
-            {isPlaying ? (
-              <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
-            ) : (
-              <svg className="w-7 h-7 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z" /></svg>
-            )}
-          </button>
-          <button onClick={skipLine} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors" title="Next"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg></button>
-          <button onClick={() => voiceEngineRef.current?.stop()} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors" title="Stop voice"><svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg></button>
-        </div>
-      </div>
+      {/* Playback Controls */}
+      <PlaybackControls
+        isPlaying={isPlaying}
+        isPaused={isPaused}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onResume={handleResume}
+        onStop={handleStop}
+        onRestart={restart}
+        onPrevLine={goBack}
+        onNextLine={skipLine}
+        onOpenTiming={() => setShowTimingControls(true)}
+        onOpenRemote={() => setShowRemotePanel(true)}
+        currentLine={currentLineIndex}
+        totalLines={dialogueLines.length}
+      />
 
       {/* Modals */}
       {showModeSelector && <ModeSelector currentMode={mode} onSelectMode={handleModeChange} onClose={() => setShowModeSelector(false)} />}
+      {showTimingControls && <TimingControls settings={timingSettings} onChange={setTimingSettings} onClose={() => setShowTimingControls(false)} />}
+      {showRemotePanel && session && <RemoteControlPanel sessionId={session.id} onClose={() => setShowRemotePanel(false)} />}
       {showAnalysis && analysis && <ScriptAnalysisPanel analysis={analysis} onClose={() => setShowAnalysis(false)} />}
       {showCoach && <PerformanceCoachPanel notes={coachNotes} onClose={() => setShowCoach(false)} onJumpToLine={(i) => { setCurrentLineIndex(i); setShowCoach(false); }} />}
       {showMemoryTracker && <LineMemoryTracker lines={session.script.lines} myCharacter={session.myCharacter} stumbleData={stumbleData} onStartDrill={() => { setShowMemoryTracker(false); restart(); }} onClose={() => setShowMemoryTracker(false)} />}

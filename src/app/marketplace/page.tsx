@@ -1,39 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
-interface MockListing {
+interface Listing {
   id: string;
-  sellerName: string;
-  scriptTitle: string;
+  seller_id: string;
+  seller_name: string;
+  script_title: string;
   description: string;
-  price: number;
+  price_cents: number;
   rating: number;
-  reviewCount: number;
-  purchaseCount: number;
-  genre: string;
+  review_count: number;
+  purchase_count: number;
+  annotation_notes: string | null;
+  created_at: string;
 }
-
-const MOCK_LISTINGS: MockListing[] = [
-  { id: "mc-1", sellerName: "Sarah Jones", scriptTitle: "Lady Macbeth — Sleepwalking Scene", description: "A masterclass in building from whisper to confession. Includes annotated beat breakdown and three progressive takes showing my approach.", price: 15, rating: 4.8, reviewCount: 23, purchaseCount: 67, genre: "Classical Drama" },
-  { id: "mc-2", sellerName: "Marcus Chen", scriptTitle: "Willy Loman — Requiem", description: "Death of a Salesman's final moments. I break down the transition from defiance to defeat, with notes on breath control during the emotional peak.", price: 20, rating: 4.9, reviewCount: 15, purchaseCount: 42, genre: "American Drama" },
-  { id: "mc-3", sellerName: "Olivia Williams", scriptTitle: "Blanche DuBois — Final Exit", description: "The famous 'kindness of strangers' sequence with full emotional arc analysis. Before-and-after takes across 5 sessions.", price: 25, rating: 5.0, reviewCount: 31, purchaseCount: 89, genre: "American Drama" },
-  { id: "mc-4", sellerName: "James Taylor", scriptTitle: "Hamlet — To Be Or Not To Be", description: "Fresh take on the most famous monologue in English. I treat it as a genuine decision, not a performance piece. Session notes included.", price: 10, rating: 4.6, reviewCount: 8, purchaseCount: 34, genre: "Classical Drama" },
-  { id: "mc-5", sellerName: "Emma Garcia", scriptTitle: "Nina — The Seagull", description: "Chekhov requires stillness. My approach to Nina's final monologue focuses on restraint and the power of what's unsaid.", price: 18, rating: 4.7, reviewCount: 12, purchaseCount: 28, genre: "Classical Drama" },
-  { id: "mc-6", sellerName: "Sarah Jones", scriptTitle: "Commercial VO — Warm Authority", description: "How to find the balance between approachable and authoritative for insurance, financial, and healthcare reads.", price: 12, rating: 4.9, reviewCount: 45, purchaseCount: 156, genre: "Voice Acting" },
-];
 
 export default function MarketplacePage() {
   const [search, setSearch] = useState("");
-  const [genreFilter, setGenreFilter] = useState("all");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const genres = ["all", ...new Set(MOCK_LISTINGS.map((l) => l.genre))];
-  const filtered = MOCK_LISTINGS.filter((l) => {
-    const matchesSearch = !search || l.scriptTitle.toLowerCase().includes(search.toLowerCase()) || l.sellerName.toLowerCase().includes(search.toLowerCase());
-    const matchesGenre = genreFilter === "all" || l.genre === genreFilter;
-    return matchesSearch && matchesGenre;
-  });
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const fetchListings = useCallback(async () => {
+    try {
+      const url = debouncedSearch
+        ? `/api/marketplace?search=${encodeURIComponent(debouncedSearch)}`
+        : "/api/marketplace";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to load listings");
+      const data = await res.json();
+      setListings(data);
+    } catch {
+      setError("Failed to load listings");
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
+
+  async function handlePurchase(listingId: string) {
+    setError(null);
+    setSuccessMessage(null);
+    setPurchasing(listingId);
+
+    try {
+      const res = await fetch(`/api/marketplace/${listingId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "purchase" }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(typeof data.error === "string" ? data.error : "Purchase failed");
+      }
+
+      setSuccessMessage("Purchase successful! You now have access to this masterclass.");
+      fetchListings();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setPurchasing(null);
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
@@ -47,52 +90,77 @@ export default function MarketplacePage() {
         </Link>
       </div>
 
-      {/* Search & Filter */}
+      {error && (
+        <div className="bg-error/10 border border-error/30 text-error rounded-xl p-3 mb-4 text-sm">
+          {error}
+          <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
+        </div>
+      )}
+      {successMessage && (
+        <div className="bg-success/10 border border-success/30 text-success rounded-xl p-3 mb-4 text-sm">
+          {successMessage}
+          <button onClick={() => setSuccessMessage(null)} className="ml-2 underline">Dismiss</button>
+        </div>
+      )}
+
+      {/* Search */}
       <div className="flex gap-4 mb-6">
         <div className="flex-1 relative">
           <svg className="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
-          <input type="text" placeholder="Search masterclasses..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-surface border border-border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-accent" />
+          <input
+            type="text"
+            placeholder="Search masterclasses..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-surface border border-border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-accent"
+          />
         </div>
-        <select value={genreFilter} onChange={(e) => setGenreFilter(e.target.value)} className="bg-surface border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-accent">
-          {genres.map((g) => <option key={g} value={g}>{g === "all" ? "All Genres" : g}</option>)}
-        </select>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((listing) => (
-          <div key={listing.id} className="bg-surface border border-border rounded-xl p-5 flex flex-col hover:border-accent/30 transition-colors">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center text-sm font-bold text-accent-light">
-                {listing.sellerName[0]}
-              </div>
-              <div>
-                <div className="text-sm font-medium">{listing.sellerName}</div>
-                <div className="flex items-center gap-1 text-xs text-warning">
-                  {"★".repeat(Math.floor(listing.rating))} <span className="text-muted">{listing.rating}</span>
+      {loading ? (
+        <div className="text-center py-12 text-muted">Loading masterclasses...</div>
+      ) : listings.length === 0 ? (
+        <div className="text-center py-12 text-muted">No masterclasses found. Be the first to sell your take!</div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {listings.map((listing) => (
+            <div key={listing.id} className="bg-surface border border-border rounded-xl p-5 flex flex-col hover:border-accent/30 transition-colors">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center text-sm font-bold text-accent-light">
+                  {listing.seller_name[0]}
+                </div>
+                <div>
+                  <div className="text-sm font-medium">{listing.seller_name}</div>
+                  <div className="flex items-center gap-1 text-xs text-warning">
+                    {"★".repeat(Math.max(1, Math.floor(listing.rating)))} <span className="text-muted">{listing.rating > 0 ? listing.rating.toFixed(1) : "New"}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <h3 className="font-semibold mb-1">{listing.scriptTitle}</h3>
-            <p className="text-sm text-muted mb-3 flex-1 line-clamp-2">{listing.description}</p>
+              <h3 className="font-semibold mb-1">{listing.script_title}</h3>
+              <p className="text-sm text-muted mb-3 flex-1 line-clamp-2">{listing.description}</p>
 
-            <div className="flex items-center gap-3 text-xs text-muted mb-4">
-              <span className="bg-surface-light px-2 py-0.5 rounded">{listing.genre}</span>
-              <span>{listing.purchaseCount} purchased</span>
-              <span>{listing.reviewCount} reviews</span>
-            </div>
+              <div className="flex items-center gap-3 text-xs text-muted mb-4">
+                <span>{listing.purchase_count} purchased</span>
+                <span>{listing.review_count} reviews</span>
+              </div>
 
-            <div className="flex items-center justify-between mt-auto">
-              <span className="text-xl font-bold text-accent-light">${listing.price}</span>
-              <button className="bg-accent hover:bg-accent-dark text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors">
-                Buy
-              </button>
+              <div className="flex items-center justify-between mt-auto">
+                <span className="text-xl font-bold text-accent-light">${(listing.price_cents / 100).toFixed(0)}</span>
+                <button
+                  onClick={() => handlePurchase(listing.id)}
+                  disabled={purchasing === listing.id}
+                  className="bg-accent hover:bg-accent-dark text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors disabled:opacity-50"
+                >
+                  {purchasing === listing.id ? "Buying..." : "Buy"}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

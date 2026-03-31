@@ -1,19 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+interface SellerListing {
+  id: string;
+  script_title: string;
+  price_cents: number;
+  description: string;
+  annotation_notes: string | null;
+  rating: number;
+  review_count: number;
+  purchase_count: number;
+  status: string;
+  created_at: string;
+}
+
+interface SellerEarnings {
+  total_cents: number;
+  listing_count: number;
+  total_purchases: number;
+}
 
 export default function SellMasterclassPage() {
   const router = useRouter();
+  const [myListings, setMyListings] = useState<SellerListing[]>([]);
+  const [earnings, setEarnings] = useState<SellerEarnings>({ total_cents: 0, listing_count: 0, total_purchases: 0 });
+  const [loadingListings, setLoadingListings] = useState(true);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState(15);
   const [notes, setNotes] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchSellerData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/marketplace?seller=true");
+      if (!res.ok) return;
+      const data = await res.json();
+      setMyListings(data.listings);
+      setEarnings(data.earnings);
+    } catch {
+      // best effort
+    } finally {
+      setLoadingListings(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSellerData();
+  }, [fetchSellerData]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setError(null);
+    setCreating(true);
+
+    try {
+      const res = await fetch("/api/marketplace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scriptTitle: title.trim(),
+          price,
+          description: description.trim(),
+          annotationNotes: notes.trim() || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(typeof data.error === "string" ? data.error : "Failed to create listing");
+      }
+
+      setSubmitted(true);
+      fetchSellerData();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setCreating(false);
+    }
   };
 
   if (submitted) {
@@ -25,9 +95,14 @@ export default function SellMasterclassPage() {
         <h1 className="text-3xl font-bold mb-4">Masterclass Listed!</h1>
         <p className="text-muted mb-2">Your masterclass &quot;{title}&quot; is now live on the marketplace.</p>
         <p className="text-muted mb-8">You&apos;ll earn 85% of each sale (${(price * 0.85).toFixed(2)}) with Line Runner taking a 15% platform commission.</p>
-        <button onClick={() => router.push("/marketplace")} className="bg-accent hover:bg-accent-dark text-white font-semibold px-8 py-3 rounded-xl transition-colors">
-          View Marketplace
-        </button>
+        <div className="flex gap-4 justify-center">
+          <button onClick={() => { setSubmitted(false); setTitle(""); setDescription(""); setNotes(""); setPrice(15); }} className="bg-surface-light hover:bg-border text-foreground font-semibold px-8 py-3 rounded-xl transition-colors">
+            List Another
+          </button>
+          <button onClick={() => router.push("/marketplace")} className="bg-accent hover:bg-accent-dark text-white font-semibold px-8 py-3 rounded-xl transition-colors">
+            View Marketplace
+          </button>
+        </div>
       </div>
     );
   }
@@ -42,10 +117,35 @@ export default function SellMasterclassPage() {
       <h1 className="text-3xl font-bold mb-2">Sell a Masterclass</h1>
       <p className="text-muted mb-8">Package your best take as a paid teaching resource. You set the price, we handle everything else.</p>
 
-      <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-6 space-y-5">
+      {/* Earnings Overview */}
+      {!loadingListings && (myListings.length > 0 || earnings.total_cents > 0) && (
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="bg-surface border border-border rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-accent-light">${(earnings.total_cents / 100).toFixed(2)}</div>
+            <div className="text-sm text-muted">Total Earnings</div>
+          </div>
+          <div className="bg-surface border border-border rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold">{earnings.listing_count}</div>
+            <div className="text-sm text-muted">Active Listings</div>
+          </div>
+          <div className="bg-surface border border-border rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold">{earnings.total_purchases}</div>
+            <div className="text-sm text-muted">Total Sales</div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-error/10 border border-error/30 text-error rounded-xl p-3 mb-4 text-sm">
+          {error}
+          <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-6 space-y-5 mb-8">
         <div>
           <label className="text-sm text-muted block mb-1.5">Script / Monologue Title</label>
-          <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Lady Macbeth — Sleepwalking Scene" className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 focus:outline-none focus:border-accent" />
+          <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Lady Macbeth -- Sleepwalking Scene" className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 focus:outline-none focus:border-accent" />
         </div>
 
         <div>
@@ -89,10 +189,36 @@ export default function SellMasterclassPage() {
           </div>
         </div>
 
-        <button type="submit" className="w-full bg-accent hover:bg-accent-dark text-white font-semibold py-3.5 rounded-xl transition-colors">
-          List Masterclass for ${price}
+        <button type="submit" disabled={creating} className="w-full bg-accent hover:bg-accent-dark text-white font-semibold py-3.5 rounded-xl transition-colors disabled:opacity-50">
+          {creating ? "Creating..." : `List Masterclass for $${price}`}
         </button>
       </form>
+
+      {/* Existing Listings */}
+      {!loadingListings && myListings.length > 0 && (
+        <>
+          <h2 className="text-xl font-semibold mb-4">Your Listings</h2>
+          <div className="space-y-3">
+            {myListings.map((listing) => (
+              <div key={listing.id} className="bg-surface border border-border rounded-xl p-5 flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold">{listing.script_title}</h3>
+                  <p className="text-sm text-muted mt-1 line-clamp-1">{listing.description}</p>
+                  <div className="flex gap-4 text-xs text-muted mt-2">
+                    <span>${(listing.price_cents / 100).toFixed(0)}</span>
+                    <span>{listing.purchase_count} sales</span>
+                    <span>{listing.review_count} reviews</span>
+                    <span className={`font-medium ${listing.status === "active" ? "text-success" : "text-muted"}`}>{listing.status}</span>
+                  </div>
+                </div>
+                <div className="text-lg font-bold text-accent-light">
+                  ${((listing.price_cents * listing.purchase_count) / 100).toFixed(0)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

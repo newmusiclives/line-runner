@@ -1,22 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-type DeliveryStatus = "draft" | "sent" | "viewed" | "approved" | "paid";
+type DeliveryStatus = "pending" | "approved" | "paid";
 
 interface Delivery {
   id: string;
-  projectTitle: string;
-  clientName: string;
-  clientEmail: string;
-  audioFileName: string;
-  hoursWorked: number;
-  hourlyRate: number;
-  usageRights: string;
-  usageDuration: string;
+  project_title: string;
+  client_name: string;
+  client_email: string;
+  audio_file_name: string;
+  hours_worked: number;
+  hourly_rate: number;
+  invoice_amount: number;
+  usage_rights: string;
+  usage_duration: string;
   status: DeliveryStatus;
-  createdAt: string;
-  link: string;
+  delivery_link: string;
+  created_at: string;
 }
 
 const USAGE_RIGHTS = [
@@ -31,61 +32,16 @@ const USAGE_RIGHTS = [
 ];
 
 const STATUS_BADGES: Record<DeliveryStatus, string> = {
-  draft: "bg-surface-light text-muted border-border",
-  sent: "bg-accent/15 text-accent-light border-accent/30",
-  viewed: "bg-warning/15 text-warning border-warning/30",
+  pending: "bg-warning/15 text-warning border-warning/30",
   approved: "bg-success/15 text-success border-success/30",
   paid: "bg-success/20 text-success border-success/40",
 };
 
-const MOCK_DELIVERIES: Delivery[] = [
-  {
-    id: "d1",
-    projectTitle: "Meridian Solutions Corporate Video",
-    clientName: "Sarah Chen",
-    clientEmail: "sarah@meridian.com",
-    audioFileName: "meridian_final_v2.wav",
-    hoursWorked: 2.5,
-    hourlyRate: 250,
-    usageRights: "Internal / Corporate Use Only",
-    usageDuration: "perpetuity",
-    status: "paid",
-    createdAt: "2026-03-22",
-    link: "https://linerunner.app/deliver/abc123",
-  },
-  {
-    id: "d2",
-    projectTitle: "HealthFirst Radio Spot",
-    clientName: "Mike Johnson",
-    clientEmail: "mike@healthfirst.com",
-    audioFileName: "healthfirst_30s_radio.wav",
-    hoursWorked: 1,
-    hourlyRate: 350,
-    usageRights: "National Broadcast - 13 Weeks",
-    usageDuration: "13 weeks",
-    status: "approved",
-    createdAt: "2026-03-25",
-    link: "https://linerunner.app/deliver/def456",
-  },
-  {
-    id: "d3",
-    projectTitle: "TechVault Explainer Series",
-    clientName: "Lisa Park",
-    clientEmail: "lisa@techvault.io",
-    audioFileName: "techvault_ep3_master.mp3",
-    hoursWorked: 4,
-    hourlyRate: 200,
-    usageRights: "Digital Only - 1 Year",
-    usageDuration: "1 year",
-    status: "viewed",
-    createdAt: "2026-03-28",
-    link: "https://linerunner.app/deliver/ghi789",
-  },
-];
-
 export default function ClientDeliveryPage() {
-  const [deliveries, setDeliveries] = useState<Delivery[]>(MOCK_DELIVERIES);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<DeliveryStatus | "all">("all");
 
   // Form state
   const [projectTitle, setProjectTitle] = useState("");
@@ -98,8 +54,27 @@ export default function ClientDeliveryPage() {
   const [usageDuration, setUsageDuration] = useState<"perpetuity" | "limited">("perpetuity");
   const [limitedDuration, setLimitedDuration] = useState("1 year");
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const invoiceTotal = hoursWorked * hourlyRate;
+
+  const fetchDeliveries = useCallback(async () => {
+    try {
+      const res = await fetch("/api/vo-tools/client-delivery");
+      if (res.ok) {
+        const data = await res.json();
+        setDeliveries(data.deliveries || []);
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDeliveries();
+  }, [fetchDeliveries]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -107,29 +82,66 @@ export default function ClientDeliveryPage() {
     }
   };
 
-  const handleGenerateLink = () => {
+  const handleGenerateLink = async () => {
     if (!projectTitle.trim() || !clientName.trim() || !clientEmail.trim()) {
       alert("Please fill in project title, client name, and email.");
       return;
     }
-    const id = `d-${Date.now()}`;
-    const link = `https://linerunner.app/deliver/${id}`;
-    const newDelivery: Delivery = {
-      id,
-      projectTitle,
-      clientName,
-      clientEmail,
-      audioFileName: audioFileName || "audio_file.wav",
-      hoursWorked,
-      hourlyRate,
-      usageRights,
-      usageDuration: usageDuration === "perpetuity" ? "perpetuity" : limitedDuration,
-      status: "sent",
-      createdAt: new Date().toISOString().split("T")[0],
-      link,
-    };
-    setDeliveries((prev) => [newDelivery, ...prev]);
-    setGeneratedLink(link);
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/vo-tools/client-delivery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_title: projectTitle,
+          client_name: clientName,
+          client_email: clientEmail,
+          audio_file_name: audioFileName || "audio_file.wav",
+          hours_worked: hoursWorked,
+          hourly_rate: hourlyRate,
+          usage_rights: usageRights,
+          usage_duration: usageDuration === "perpetuity" ? "perpetuity" : limitedDuration,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const fullLink = `${window.location.origin}${data.delivery_link}`;
+        setGeneratedLink(fullLink);
+        // Refresh list
+        fetchDeliveries();
+      } else {
+        alert("Failed to create delivery.");
+      }
+    } catch {
+      alert("Failed to create delivery.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, newStatus: DeliveryStatus) => {
+    try {
+      await fetch("/api/vo-tools/client-delivery", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
+      setDeliveries((prev) => prev.map((d) => d.id === id ? { ...d, status: newStatus } : d));
+    } catch {
+      alert("Failed to update status.");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this delivery?")) return;
+    try {
+      await fetch(`/api/vo-tools/client-delivery?id=${id}`, { method: "DELETE" });
+      setDeliveries((prev) => prev.filter((d) => d.id !== id));
+    } catch {
+      alert("Failed to delete.");
+    }
   };
 
   const resetForm = () => {
@@ -146,6 +158,14 @@ export default function ClientDeliveryPage() {
     setShowForm(false);
   };
 
+  const filteredDeliveries = filterStatus === "all"
+    ? deliveries
+    : deliveries.filter((d) => d.status === filterStatus);
+
+  const totalRevenue = deliveries.reduce((sum, d) => sum + (d.invoice_amount || 0), 0);
+  const pendingCount = deliveries.filter((d) => d.status === "pending").length;
+  const paidTotal = deliveries.filter((d) => d.status === "paid").reduce((sum, d) => sum + (d.invoice_amount || 0), 0);
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       <div className="flex items-center justify-between mb-8">
@@ -159,6 +179,22 @@ export default function ClientDeliveryPage() {
         >
           {showForm ? "Cancel" : "New Delivery"}
         </button>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="bg-surface border border-border rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-accent-light">{deliveries.length}</div>
+          <div className="text-xs text-muted">Total Deliveries</div>
+        </div>
+        <div className="bg-surface border border-border rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-warning">{pendingCount}</div>
+          <div className="text-xs text-muted">Pending</div>
+        </div>
+        <div className="bg-surface border border-border rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-success">${paidTotal.toLocaleString()}</div>
+          <div className="text-xs text-muted">Paid Revenue</div>
+        </div>
       </div>
 
       {/* New Delivery Form */}
@@ -184,10 +220,7 @@ export default function ClientDeliveryPage() {
                 >
                   Copy Link
                 </button>
-                <button
-                  onClick={resetForm}
-                  className="bg-surface-light hover:bg-border text-foreground font-medium px-5 py-2.5 rounded-lg transition-colors text-sm"
-                >
+                <button onClick={resetForm} className="bg-surface-light hover:bg-border text-foreground font-medium px-5 py-2.5 rounded-lg transition-colors text-sm">
                   Done
                 </button>
               </div>
@@ -198,42 +231,28 @@ export default function ClientDeliveryPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-sm text-muted block mb-1.5">Project Title</label>
-                  <input
-                    type="text"
-                    value={projectTitle}
-                    onChange={(e) => setProjectTitle(e.target.value)}
+                  <input type="text" value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)}
                     placeholder="e.g., Corporate Explainer Video"
-                    className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent"
-                  />
+                    className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent" />
                 </div>
                 <div>
                   <label className="text-sm text-muted block mb-1.5">Client Name</label>
-                  <input
-                    type="text"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
+                  <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)}
                     placeholder="e.g., Jane Smith"
-                    className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent"
-                  />
+                    className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent" />
                 </div>
                 <div>
                   <label className="text-sm text-muted block mb-1.5">Client Email</label>
-                  <input
-                    type="email"
-                    value={clientEmail}
-                    onChange={(e) => setClientEmail(e.target.value)}
+                  <input type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)}
                     placeholder="e.g., jane@company.com"
-                    className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent"
-                  />
+                    className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent" />
                 </div>
                 <div>
                   <label className="text-sm text-muted block mb-1.5">Audio File</label>
                   <div className="relative">
                     <input type="file" accept="audio/*" onChange={handleFileSelect} className="hidden" id="audio-upload" />
-                    <label
-                      htmlFor="audio-upload"
-                      className="w-full border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-accent/30 transition-colors block"
-                    >
+                    <label htmlFor="audio-upload"
+                      className="w-full border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-accent/30 transition-colors block">
                       {audioFileName ? (
                         <span className="text-sm text-foreground">{audioFileName}</span>
                       ) : (
@@ -249,29 +268,18 @@ export default function ClientDeliveryPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-muted block mb-1.5">Hours Worked</label>
-                    <input
-                      type="number"
-                      value={hoursWorked}
-                      onChange={(e) => setHoursWorked(parseFloat(e.target.value) || 0)}
-                      min={0.25}
-                      step={0.25}
-                      className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent"
-                    />
+                    <input type="number" value={hoursWorked} onChange={(e) => setHoursWorked(parseFloat(e.target.value) || 0)}
+                      min={0.25} step={0.25}
+                      className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent" />
                   </div>
                   <div>
                     <label className="text-sm text-muted block mb-1.5">Hourly Rate ($)</label>
-                    <input
-                      type="number"
-                      value={hourlyRate}
-                      onChange={(e) => setHourlyRate(parseFloat(e.target.value) || 0)}
-                      min={0}
-                      step={25}
-                      className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent"
-                    />
+                    <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(parseFloat(e.target.value) || 0)}
+                      min={0} step={25}
+                      className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent" />
                   </div>
                 </div>
 
-                {/* Invoice Preview */}
                 <div className="bg-accent/10 border border-accent/20 rounded-xl p-4 text-center">
                   <div className="text-sm text-muted mb-1">Invoice Total</div>
                   <div className="text-3xl font-bold text-accent-light">
@@ -282,11 +290,8 @@ export default function ClientDeliveryPage() {
 
                 <div>
                   <label className="text-sm text-muted block mb-1.5">Usage Rights</label>
-                  <select
-                    value={usageRights}
-                    onChange={(e) => setUsageRights(e.target.value)}
-                    className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent"
-                  >
+                  <select value={usageRights} onChange={(e) => setUsageRights(e.target.value)}
+                    className="w-full bg-surface-light border border-border rounded-lg px-3 py-2.5 focus:outline-none focus:border-accent">
                     {USAGE_RIGHTS.map((right) => (
                       <option key={right} value={right}>{right}</option>
                     ))}
@@ -296,42 +301,27 @@ export default function ClientDeliveryPage() {
                 <div>
                   <label className="text-sm text-muted block mb-1.5">Usage Duration</label>
                   <div className="flex gap-2 mb-2">
-                    <button
-                      onClick={() => setUsageDuration("perpetuity")}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        usageDuration === "perpetuity" ? "bg-accent text-white" : "bg-surface-light text-muted hover:text-foreground"
-                      }`}
-                    >
+                    <button onClick={() => setUsageDuration("perpetuity")}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${usageDuration === "perpetuity" ? "bg-accent text-white" : "bg-surface-light text-muted hover:text-foreground"}`}>
                       In Perpetuity
                     </button>
-                    <button
-                      onClick={() => setUsageDuration("limited")}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        usageDuration === "limited" ? "bg-accent text-white" : "bg-surface-light text-muted hover:text-foreground"
-                      }`}
-                    >
+                    <button onClick={() => setUsageDuration("limited")}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${usageDuration === "limited" ? "bg-accent text-white" : "bg-surface-light text-muted hover:text-foreground"}`}>
                       Time-Limited
                     </button>
                   </div>
                   {usageDuration === "limited" && (
-                    <input
-                      type="text"
-                      value={limitedDuration}
-                      onChange={(e) => setLimitedDuration(e.target.value)}
+                    <input type="text" value={limitedDuration} onChange={(e) => setLimitedDuration(e.target.value)}
                       placeholder="e.g., 1 year, 13 weeks"
-                      className="w-full bg-surface-light border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
-                    />
+                      className="w-full bg-surface-light border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
                   )}
                 </div>
               </div>
 
-              {/* Generate Button - full width */}
               <div className="md:col-span-2">
-                <button
-                  onClick={handleGenerateLink}
-                  className="w-full bg-accent hover:bg-accent-dark text-white font-semibold py-3.5 rounded-xl transition-colors text-lg"
-                >
-                  Generate Delivery Link
+                <button onClick={handleGenerateLink} disabled={saving}
+                  className="w-full bg-accent hover:bg-accent-dark text-white font-semibold py-3.5 rounded-xl transition-colors text-lg disabled:opacity-50">
+                  {saving ? "Creating..." : "Generate Delivery Link"}
                 </button>
               </div>
             </div>
@@ -339,37 +329,68 @@ export default function ClientDeliveryPage() {
         </div>
       )}
 
-      {/* Past Deliveries */}
+      {/* Filter Tabs */}
+      <div className="flex gap-2 mb-4">
+        {(["all", "pending", "approved", "paid"] as const).map((status) => (
+          <button key={status} onClick={() => setFilterStatus(status)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+              filterStatus === status ? "bg-accent text-white" : "bg-surface border border-border text-muted hover:text-foreground"
+            }`}>
+            {status} {status !== "all" && `(${deliveries.filter((d) => d.status === status).length})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Deliveries List */}
       <div className="bg-surface border border-border rounded-2xl p-6">
-        <h2 className="font-semibold mb-4">Past Deliveries</h2>
-        {deliveries.length === 0 ? (
+        <h2 className="font-semibold mb-4">Deliveries</h2>
+        {loading ? (
+          <div className="text-center py-12 text-muted text-sm">Loading deliveries...</div>
+        ) : filteredDeliveries.length === 0 ? (
           <div className="text-center py-12 text-muted">
-            <p>No deliveries yet. Create your first delivery above.</p>
+            <p>{filterStatus === "all" ? "No deliveries yet. Create your first delivery above." : `No ${filterStatus} deliveries.`}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {deliveries.map((delivery) => (
-              <div key={delivery.id} className="bg-surface-light rounded-xl p-4 flex items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="font-medium truncate">{delivery.projectTitle}</h3>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded border capitalize ${STATUS_BADGES[delivery.status]}`}>
+            {filteredDeliveries.map((delivery) => (
+              <div key={delivery.id} className="bg-surface-light rounded-xl p-4">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <h3 className="font-medium truncate">{delivery.project_title}</h3>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded border capitalize shrink-0 ${STATUS_BADGES[delivery.status as DeliveryStatus] || STATUS_BADGES.pending}`}>
                       {delivery.status}
                     </span>
                   </div>
-                  <div className="flex gap-4 text-xs text-muted">
-                    <span>{delivery.clientName}</span>
-                    <span>${(delivery.hoursWorked * delivery.hourlyRate).toLocaleString()}</span>
-                    <span>{delivery.usageRights}</span>
-                    <span>{delivery.createdAt}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {delivery.status === "pending" && (
+                      <button onClick={() => handleUpdateStatus(delivery.id, "approved")}
+                        className="text-xs bg-success/15 text-success hover:bg-success/25 px-2.5 py-1 rounded-lg border border-success/30">
+                        Mark Approved
+                      </button>
+                    )}
+                    {delivery.status === "approved" && (
+                      <button onClick={() => handleUpdateStatus(delivery.id, "paid")}
+                        className="text-xs bg-success/15 text-success hover:bg-success/25 px-2.5 py-1 rounded-lg border border-success/30">
+                        Mark Paid
+                      </button>
+                    )}
+                    <button onClick={() => navigator.clipboard.writeText(`${window.location.origin}${delivery.delivery_link}`)}
+                      className="text-xs text-accent-light hover:text-accent transition-colors px-2 py-1">
+                      Copy Link
+                    </button>
+                    <button onClick={() => handleDelete(delivery.id)}
+                      className="text-xs text-muted hover:text-danger transition-colors px-2 py-1">
+                      Delete
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => navigator.clipboard.writeText(delivery.link)}
-                  className="text-sm text-accent-light hover:text-accent transition-colors shrink-0"
-                >
-                  Copy Link
-                </button>
+                <div className="flex gap-4 text-xs text-muted">
+                  <span>{delivery.client_name}</span>
+                  <span>{delivery.client_email}</span>
+                  <span className="font-semibold">${(delivery.invoice_amount || 0).toLocaleString()}</span>
+                  <span>{delivery.usage_rights}</span>
+                  <span>{delivery.created_at?.split("T")[0]}</span>
+                </div>
               </div>
             ))}
           </div>

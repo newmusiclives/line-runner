@@ -46,3 +46,32 @@ export const paymentSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
 });
+
+// Scene Exchange
+export const createSceneExchangeSchema = z.object({
+  scriptId: z.string().min(1, "Script is required"),
+  hostCharacter: z.string().min(1, "Your character name is required"),
+  guestCharacter: z.string().min(1, "Partner character name is required"),
+});
+
+export const joinSceneExchangeSchema = z.object({
+  action: z.enum(["join", "leave"]),
+});
+
+// Masterclass Marketplace
+export const createMasterclassSchema = z.object({
+  scriptTitle: z.string().min(1, "Script title is required"),
+  price: z.number().min(1, "Price must be at least $1").max(500, "Price cannot exceed $500"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  annotationNotes: z.string().optional(),
+});
+
+export const purchaseMasterclassSchema = z.object({
+  action: z.literal("purchase"),
+});
+
+// PASS Subscriptions
+export const createPassSubscriptionSchema = z.object({
+  actorUserId: z.string().min(1, "Actor is required"),
+  tier: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+});

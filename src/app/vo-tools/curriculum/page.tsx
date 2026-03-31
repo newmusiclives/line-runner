@@ -1,15 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { GENRE_LABELS, GENRE_DESCRIPTIONS, LEVEL_LABELS, getCurriculumModule } from "@/lib/vo/curriculum-data";
 import type { VOGenre, CurriculumLevel } from "@/types";
+
+interface ProgressEntry {
+  genre: VOGenre;
+  currentLevel: CurriculumLevel;
+  completedScripts: string[];
+  certificationBadge: string | null;
+}
 
 export default function CurriculumPage() {
   const [selectedGenre, setSelectedGenre] = useState<VOGenre | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<CurriculumLevel>(1);
   const [expandedScript, setExpandedScript] = useState<string | null>(null);
+  const [progress, setProgress] = useState<ProgressEntry[]>([]);
+  const [completing, setCompleting] = useState<string | null>(null);
 
   const genres: VOGenre[] = ["commercial", "audiobook", "e-learning", "character", "medical", "promo", "podcast"];
+
+  const fetchProgress = useCallback(async () => {
+    try {
+      const res = await fetch("/api/vo-tools/curriculum");
+      if (res.ok) setProgress(await res.json());
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchProgress(); }, [fetchProgress]);
+
+  const getGenreProgress = (genre: VOGenre) => progress.find((p) => p.genre === genre);
+
+  const isScriptCompleted = (scriptId: string) => {
+    if (!selectedGenre) return false;
+    const gp = getGenreProgress(selectedGenre);
+    return gp?.completedScripts.includes(scriptId) ?? false;
+  };
+
+  const completeScript = async (scriptId: string) => {
+    if (!selectedGenre) return;
+    setCompleting(scriptId);
+    try {
+      const res = await fetch("/api/vo-tools/curriculum", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ genre: selectedGenre, scriptId, level: selectedLevel }),
+      });
+      if (res.ok) await fetchProgress();
+    } catch {}
+    setCompleting(null);
+  };
 
   if (!selectedGenre) {
     return (
@@ -26,14 +66,20 @@ export default function CurriculumPage() {
             <button key={genre} onClick={() => setSelectedGenre(genre)} className="bg-surface border border-border rounded-xl p-6 text-left hover:border-accent/30 transition-all group">
               <h3 className="text-lg font-semibold mb-2 group-hover:text-accent-light transition-colors">{GENRE_LABELS[genre]}</h3>
               <p className="text-sm text-muted leading-relaxed mb-4">{GENRE_DESCRIPTIONS[genre]}</p>
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-1">
-                  {[1, 2, 3, 4, 5].map((l) => (
-                    <div key={l} className="w-5 h-5 rounded-full bg-surface-light border-2 border-surface flex items-center justify-center text-[10px] text-muted">{l}</div>
-                  ))}
-                </div>
-                <span className="text-xs text-muted">5 levels / 15 scripts</span>
-              </div>
+              {(() => {
+                const gp = getGenreProgress(genre);
+                const completed = gp?.completedScripts.length ?? 0;
+                return (
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-1">
+                      {[1, 2, 3, 4, 5].map((l) => (
+                        <div key={l} className={`w-5 h-5 rounded-full border-2 border-surface flex items-center justify-center text-[10px] ${gp && gp.currentLevel > l ? "bg-success text-white" : gp && gp.currentLevel === l ? "bg-accent/20 text-accent-light" : "bg-surface-light text-muted"}`}>{l}</div>
+                      ))}
+                    </div>
+                    <span className="text-xs text-muted">{completed}/15 scripts{gp?.certificationBadge ? " ★" : ""}</span>
+                  </div>
+                );
+              })()}
             </button>
           ))}
         </div>
@@ -98,9 +144,16 @@ export default function CurriculumPage() {
                   <p className="text-lg leading-relaxed">{script.text}</p>
                 </div>
                 <div className="flex gap-3">
-                  <button className="flex-1 bg-accent hover:bg-accent-dark text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
-                    Record Submission
-                  </button>
+                  {isScriptCompleted(script.id) ? (
+                    <div className="flex-1 bg-success/10 text-success font-medium py-2.5 rounded-lg text-sm text-center flex items-center justify-center gap-2">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      Completed
+                    </div>
+                  ) : (
+                    <button onClick={() => completeScript(script.id)} disabled={completing === script.id} className="flex-1 bg-accent hover:bg-accent-dark disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
+                      {completing === script.id ? "Saving..." : "Mark Complete"}
+                    </button>
+                  )}
                   <button className="px-4 py-2.5 bg-surface-light hover:bg-border text-sm rounded-lg transition-colors">
                     Practice Read
                   </button>
