@@ -444,6 +444,13 @@ CREATE TABLE IF NOT EXISTS earnings_ledger (
   created_at      TEXT DEFAULT (datetime('now'))
 );
 
+-- Integration Settings (admin-managed API keys and service configs)
+CREATE TABLE IF NOT EXISTS integration_settings (
+  key         TEXT PRIMARY KEY,
+  value       TEXT NOT NULL,
+  updated_at  TEXT DEFAULT (now())
+);
+
 -- Seed default feature flags
 INSERT OR IGNORE INTO feature_flags (key, enabled) VALUES
   ('emotion_detection', 1),

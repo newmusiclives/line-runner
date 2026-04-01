@@ -175,25 +175,56 @@ export class BrowserVoiceEngine {
   }
 }
 
-// ElevenLabs API integration
+// Factory: fetch config and return the best available engine
+export async function createVoiceEngine(): Promise<BrowserVoiceEngine | ElevenLabsVoiceEngine> {
+  try {
+    const res = await fetch("/api/voice/config");
+    if (res.ok) {
+      const { engine, apiKey } = await res.json();
+      if (engine === "elevenlabs" && apiKey) {
+        return new ElevenLabsVoiceEngine(apiKey);
+      }
+    }
+  } catch {
+    // Fall through to browser engine
+  }
+  return new BrowserVoiceEngine();
+}
+
+// ElevenLabs API integration — same speak(text, assignment, onEnd) interface as BrowserVoiceEngine
 export class ElevenLabsVoiceEngine {
   private apiKey: string;
   private audioContext: AudioContext | null = null;
   private currentSource: AudioBufferSourceNode | null = null;
+  private browserFallback: BrowserVoiceEngine;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
+    this.browserFallback = new BrowserVoiceEngine();
   }
 
-  async speak(
+  speak(
     text: string,
-    voiceId: string,
+    assignment: VoiceAssignment,
+    onEnd?: () => void
+  ): null {
+    this.speakAsync(text, assignment, onEnd).catch(() => {
+      // Fall back to browser TTS on any ElevenLabs error
+      this.browserFallback.speak(text, assignment, onEnd);
+    });
+    return null;
+  }
+
+  private async speakAsync(
+    text: string,
+    assignment: VoiceAssignment,
     onEnd?: () => void
   ): Promise<void> {
     if (!this.audioContext) {
       this.audioContext = new AudioContext();
     }
 
+    const voiceId = assignment.voiceId;
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
       {
@@ -204,10 +235,11 @@ export class ElevenLabsVoiceEngine {
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_monolingual_v1",
+          model_id: "eleven_multilingual_v2",
           voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,
+            speed: assignment.rate ?? 1.0,
           },
         }),
       }
@@ -234,5 +266,14 @@ export class ElevenLabsVoiceEngine {
   stop() {
     this.currentSource?.stop();
     this.currentSource = null;
+    this.browserFallback.stop();
+  }
+
+  pause() {
+    this.audioContext?.suspend();
+  }
+
+  resume() {
+    this.audioContext?.resume();
   }
 }

@@ -1,0 +1,69 @@
+import { getDb } from "./index";
+
+export interface IntegrationSetting {
+  key: string;
+  value: string;
+  updated_at: string;
+}
+
+const VALID_KEYS = [
+  // Manifest Financial
+  "manifest_api_url",
+  "manifest_secret_key",
+  // ElevenLabs
+  "elevenlabs_api_key",
+  // GoHighLevel
+  "gohighlevel_api_key",
+  "gohighlevel_location_id",
+  // Google OAuth
+  "google_client_id",
+  "google_client_secret",
+] as const;
+
+export type IntegrationKey = (typeof VALID_KEYS)[number];
+
+export function isValidKey(key: string): key is IntegrationKey {
+  return (VALID_KEYS as readonly string[]).includes(key);
+}
+
+export async function ensureTable() {
+  const sql = getDb();
+  await sql`CREATE TABLE IF NOT EXISTS integration_settings (
+    key         TEXT PRIMARY KEY,
+    value       TEXT NOT NULL,
+    updated_at  TEXT DEFAULT (now())
+  )`;
+}
+
+export async function getSetting(key: IntegrationKey): Promise<string | null> {
+  const sql = getDb();
+  const rows = await sql`SELECT value FROM integration_settings WHERE key = ${key}`;
+  return (rows[0] as any)?.value ?? null;
+}
+
+export async function getSettings(keys: IntegrationKey[]): Promise<Record<string, string | null>> {
+  const result: Record<string, string | null> = {};
+  for (const key of keys) {
+    result[key] = await getSetting(key);
+  }
+  return result;
+}
+
+export async function getAllSettings(): Promise<IntegrationSetting[]> {
+  const sql = getDb();
+  const rows = await sql`SELECT key, value, updated_at FROM integration_settings ORDER BY key`;
+  return rows as IntegrationSetting[];
+}
+
+export async function upsertSetting(key: IntegrationKey, value: string): Promise<void> {
+  const sql = getDb();
+  const now = new Date().toISOString();
+  await sql`INSERT INTO integration_settings (key, value, updated_at)
+    VALUES (${key}, ${value}, ${now})
+    ON CONFLICT (key) DO UPDATE SET value = ${value}, updated_at = ${now}`;
+}
+
+export async function deleteSetting(key: IntegrationKey): Promise<void> {
+  const sql = getDb();
+  await sql`DELETE FROM integration_settings WHERE key = ${key}`;
+}

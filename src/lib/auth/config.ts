@@ -2,6 +2,43 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { getUserByEmail, verifyPassword, createUser, getUserById } from "@/lib/db/users";
+import { ensureTable, getSetting } from "@/lib/db/integrations";
+import { syncContactToGhl } from "@/lib/gohighlevel";
+
+// Cache Google creds so we don't hit DB on every request
+let cachedGoogleCreds: { clientId: string; clientSecret: string } | null | undefined = undefined;
+
+async function getGoogleCredentials(): Promise<{ clientId: string; clientSecret: string } | null> {
+  // Prefer env vars
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    return {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    };
+  }
+  // Fall back to DB integration settings
+  if (cachedGoogleCreds !== undefined) return cachedGoogleCreds;
+  try {
+    await ensureTable();
+    const clientId = await getSetting("google_client_id");
+    const clientSecret = await getSetting("google_client_secret");
+    if (clientId && clientSecret) {
+      cachedGoogleCreds = { clientId, clientSecret };
+      return cachedGoogleCreds;
+    }
+  } catch {
+    // DB not available yet
+  }
+  cachedGoogleCreds = null;
+  // Reset cache after 60s so new settings are picked up
+  setTimeout(() => { cachedGoogleCreds = undefined; }, 60_000);
+  return null;
+}
+
+// Build providers list — Google is added dynamically
+const googleCreds = process.env.GOOGLE_CLIENT_ID
+  ? { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET! }
+  : null;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -26,6 +63,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const existing = await getUserByEmail(email);
           if (existing) return null;
           const user = await createUser(email, name || email.split("@")[0], password);
+          // Sync new user to GoHighLevel CRM
+          syncContactToGhl({
+            email: user.email,
+            name: user.name,
+            tags: ["new-user", "credentials"],
+          }).catch(() => {});
           return { id: user.id, email: user.email, name: user.name, role: user.role };
         }
 
@@ -36,11 +79,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return { id: user.id, email: user.email, name: user.name, role: user.role };
       },
     }),
-    ...(process.env.GOOGLE_CLIENT_ID
+    ...(googleCreds
       ? [
           Google({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            clientId: googleCreds.clientId,
+            clientSecret: googleCreds.clientSecret,
           }),
         ]
       : []),
@@ -71,6 +114,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const existing = await getUserByEmail(user.email);
         if (!existing) {
           await createUser(user.email, user.name || user.email.split("@")[0]);
+          // Sync new Google user to GoHighLevel CRM
+          syncContactToGhl({
+            email: user.email,
+            name: user.name || user.email.split("@")[0],
+            tags: ["new-user", "google-oauth"],
+          }).catch(() => {});
         }
       }
       return true;

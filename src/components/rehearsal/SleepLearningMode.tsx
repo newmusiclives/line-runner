@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ScriptLine, VoiceAssignment } from "@/types";
-import { BrowserVoiceEngine } from "@/lib/voice-engine";
+import { BrowserVoiceEngine, ElevenLabsVoiceEngine, createVoiceEngine } from "@/lib/voice-engine";
 
 interface SleepLearningModeProps {
   lines: ScriptLine[];
@@ -29,7 +29,7 @@ export default function SleepLearningMode({
   const [showCurrentLine, setShowCurrentLine] = useState(true);
   const [textOpacity, setTextOpacity] = useState(1);
   const [showSettings, setShowSettings] = useState(true);
-  const voiceEngineRef = useRef<BrowserVoiceEngine | null>(null);
+  const voiceEngineRef = useRef<BrowserVoiceEngine | ElevenLabsVoiceEngine | null>(null);
   const isPlayingRef = useRef(false);
   const timerStartRef = useRef<number>(0);
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,7 +40,9 @@ export default function SleepLearningMode({
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      voiceEngineRef.current = new BrowserVoiceEngine();
+      createVoiceEngine().then((engine) => {
+        voiceEngineRef.current = engine;
+      });
     }
     return () => {
       voiceEngineRef.current?.stop();
