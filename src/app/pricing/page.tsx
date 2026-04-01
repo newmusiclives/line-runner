@@ -113,7 +113,7 @@ export default function PricingPage() {
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
-            {["1 complete scene run/month", "2,500 credits (~2.5 min AI audio)", "3 basic AI voices", "Script analysis on upload", "Standard rehearsal mode", "Line Memory Tracker"].map((f) => (
+            {["1 scene run per month", "2,500 credits (~2.5 min AI audio)", "3 basic AI voices", "Standard rehearsal mode", "Script analysis on upload", "Line Memory Tracker", "Teleprompter mode", "Bookmarks"].map((f) => (
               <li key={f} className="flex items-start gap-2 text-sm text-muted">
                 <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                 {f}
@@ -138,13 +138,17 @@ export default function PricingPage() {
 
           <ul className="space-y-2.5 mb-8 flex-1">
             {[
-              "40,000 credits/month", "Unlimited scene runs", "All 10 rehearsal modes",
-              "10 AI voices per script", "Full voice customisation",
-              "AI Performance Coach", "Subtext, Wildcard, Cold Read modes",
-              "Objective & Obstacle, Dynamics sliders",
+              "40,000 credits/month",
+              "Unlimited scene runs",
+              "All 10 rehearsal modes",
+              "10 AI voices, full customisation",
+              "AI Performance Coach",
+              "Subtext, Wildcard, Cold Read",
+              "Emotional Arc + Relationship Dynamics",
+              "Annotations (8 types + voice memos)",
               "Self-Tape Studio with 1080p export",
               "Audition Vault + Scene Exchange",
-              "Buy credit blocks when you need more",
+              "Credit blocks from $8 when you need more",
             ].map((f) => (
               <li key={f} className="flex items-start gap-2 text-sm text-muted">
                 <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
@@ -292,21 +296,23 @@ export default function PricingPage() {
                 { feature: "Credit blocks", free: "—", pro: "From $8", studio: "From $8", enterprise: "Volume" },
                 { feature: "Scene runs", free: "1/month", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
                 { feature: "AI voices per script", free: "3", pro: "10", studio: "25", enterprise: "25+" },
-                { feature: "Rehearsal modes", free: "1", pro: "10", studio: "10", enterprise: "10" },
-                { feature: "Script analysis on upload", free: true, pro: true, studio: true, enterprise: true },
+                { feature: "Rehearsal modes", free: "Standard", pro: "All 10", studio: "All 10", enterprise: "All 10" },
+                { feature: "Script analysis", free: true, pro: true, studio: true, enterprise: true },
+                { feature: "Line Memory Tracker", free: true, pro: true, studio: true, enterprise: true },
+                { feature: "Bookmarks", free: true, pro: true, studio: true, enterprise: true },
+                { feature: "Teleprompter", free: true, pro: true, studio: true, enterprise: true },
                 { feature: "AI Performance Coach", free: false, pro: true, studio: true, enterprise: true },
                 { feature: "Subtext, Wildcard, Cold Read", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "Objective & Obstacle Mode", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "Self-Tape Studio + export", free: false, pro: true, studio: true, enterprise: true },
+                { feature: "Annotations (8 types + voice)", free: false, pro: true, studio: true, enterprise: true },
+                { feature: "Self-Tape Studio + 1080p export", free: false, pro: true, studio: true, enterprise: true },
                 { feature: "Audition Vault", free: false, pro: true, studio: true, enterprise: true },
                 { feature: "Scene Exchange", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "VO Professional Suite", free: false, pro: false, studio: true, enterprise: true },
-                { feature: "Demo Reel Producer", free: false, pro: false, studio: true, enterprise: true },
-                { feature: "Client Delivery Portal", free: false, pro: false, studio: true, enterprise: true },
+                { feature: "Emotional Arc + Dynamics", free: false, pro: true, studio: true, enterprise: true },
+                { feature: "VO Professional Suite (10 tools)", free: false, pro: false, studio: true, enterprise: true },
                 { feature: "Income tools (Masterclass, PASS)", free: false, pro: false, studio: true, enterprise: true },
                 { feature: "STUDIO Dashboard", free: false, pro: false, studio: true, enterprise: true },
-                { feature: "Multi-seat admin", free: false, pro: false, studio: false, enterprise: true },
-                { feature: "SSO / institutional login", free: false, pro: false, studio: false, enterprise: true },
+                { feature: "Voice Print Builder", free: false, pro: false, studio: true, enterprise: true },
+                { feature: "Multi-seat admin + SSO", free: false, pro: false, studio: false, enterprise: true },
               ].map((row) => (
                 <tr key={row.feature} className="border-b border-border/50">
                   <td className="py-3 px-4">{row.feature}</td>
@@ -349,7 +355,7 @@ export default function PricingPage() {
             { q: "What happens if I run out of credits?", a: "On the Free plan, you'll need to wait until next month. On Pro and Studio, you can instantly buy credit blocks starting at $8 for 10 minutes. Credits never expire — use them whenever you need them." },
             { q: "What are credit blocks?", a: "Credit blocks are one-time purchases of extra credits for Pro and Studio subscribers. They come in 4 sizes: 10 min ($8), 30 min ($20), 60 min ($35), and 120 min ($60). Larger blocks offer a better per-minute rate. Credits from blocks never expire." },
             { q: "Is the Free plan really free?", a: "Yes. No credit card required. You get 1 complete scene run per month with 2,500 credits, basic AI voices, and script analysis. Upgrade anytime." },
-            { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, and 25,000 credits. Studio triples your credits to 75,000 and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
+            { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, and 40,000 credits with 10 AI voices. Studio nearly doubles your credits to 75,000 with 25 voices, and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
             { q: "What about stage schools and theatre companies?", a: "Enterprise plans include unlimited credits, multi-seat admin, student & faculty accounts, Director's Cut for teacher collaboration, custom curriculum, SSO, and annual invoicing. Contact enterprise@linerunner.app for a custom quote." },
             { q: "Can I cancel anytime?", a: "Yes. Pro and Studio are monthly subscriptions with no lock-in. Cancel anytime and keep access through the end of your billing period. Unused credit blocks carry over." },
             { q: "How do income features work?", a: "Studio subscribers can sell Monologue Masterclasses (you keep 85%), set up PASS fan memberships ($3/$9/$19 tiers, you keep 85%), build ElevenLabs voice prints, and use the Client Delivery Portal (3% transaction fee). All earnings are visible in the STUDIO dashboard with monthly payouts." },
