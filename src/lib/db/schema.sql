@@ -174,6 +174,7 @@ CREATE TABLE IF NOT EXISTS feature_flags (
   key         TEXT PRIMARY KEY,
   enabled     INTEGER DEFAULT 1,
   config      TEXT,
+  min_tier    TEXT DEFAULT 'free' CHECK(min_tier IN ('free','pro','studio')),
   updated_at  TEXT DEFAULT (datetime('now'))
 );
 

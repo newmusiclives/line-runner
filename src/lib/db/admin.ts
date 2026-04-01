@@ -53,15 +53,26 @@ export async function getPlanDistribution(): Promise<{ plan_id: string; count: n
   return rows as { plan_id: string; count: number }[];
 }
 
-export async function getFeatureFlags(): Promise<{ key: string; enabled: boolean; config: string | null }[]> {
+export async function getFeatureFlags(): Promise<{ key: string; enabled: boolean; config: string | null; min_tier: string }[]> {
   const sql = getDb();
+  // Add min_tier column if it doesn't exist yet
+  await sql`ALTER TABLE feature_flags ADD COLUMN IF NOT EXISTS min_tier TEXT DEFAULT 'free'`;
   const rows = await sql`SELECT * FROM feature_flags ORDER BY key`;
-  return rows as { key: string; enabled: boolean; config: string | null }[];
+  return rows as { key: string; enabled: boolean; config: string | null; min_tier: string }[];
 }
 
-export async function setFeatureFlag(key: string, enabled: boolean) {
+export async function setFeatureFlag(key: string, enabled: boolean, minTier?: string) {
   const sql = getDb();
-  await sql`UPDATE feature_flags SET enabled = ${enabled}, updated_at = NOW() WHERE key = ${key}`;
+  if (minTier) {
+    await sql`UPDATE feature_flags SET enabled = ${enabled}, min_tier = ${minTier}, updated_at = NOW() WHERE key = ${key}`;
+  } else {
+    await sql`UPDATE feature_flags SET enabled = ${enabled}, updated_at = NOW() WHERE key = ${key}`;
+  }
+}
+
+export async function setFeatureTier(key: string, minTier: string) {
+  const sql = getDb();
+  await sql`UPDATE feature_flags SET min_tier = ${minTier}, updated_at = NOW() WHERE key = ${key}`;
 }
 
 export async function addAuditLog(adminId: string, action: string, targetType?: string, targetId?: string, details?: string) {
