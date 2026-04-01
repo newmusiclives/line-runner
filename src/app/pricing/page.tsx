@@ -132,13 +132,13 @@ export default function PricingPage() {
           <div className="text-sm text-muted mb-6">per month</div>
 
           <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 mb-5 text-center">
-            <div className="text-lg font-bold text-accent-light">25,000 credits</div>
-            <div className="text-xs text-muted">~25 minutes of AI audio/month</div>
+            <div className="text-lg font-bold text-accent-light">40,000 credits</div>
+            <div className="text-xs text-muted">~40 minutes of AI audio/month</div>
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
             {[
-              "25,000 credits/month", "Unlimited scene runs", "All 10 rehearsal modes",
+              "40,000 credits/month", "Unlimited scene runs", "All 10 rehearsal modes",
               "10 AI voices per script", "Full voice customisation",
               "AI Performance Coach", "Subtext, Wildcard, Cold Read modes",
               "Objective & Obstacle, Dynamics sliders",
@@ -288,7 +288,7 @@ export default function PricingPage() {
             </thead>
             <tbody>
               {[
-                { feature: "Monthly credits", free: "2,500", pro: "25,000", studio: "75,000", enterprise: "Unlimited" },
+                { feature: "Monthly credits", free: "2,500", pro: "40,000", studio: "75,000", enterprise: "Unlimited" },
                 { feature: "Credit blocks", free: "—", pro: "From $8", studio: "From $8", enterprise: "Volume" },
                 { feature: "Scene runs", free: "1/month", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
                 { feature: "AI voices per script", free: "3", pro: "10", studio: "25", enterprise: "25+" },

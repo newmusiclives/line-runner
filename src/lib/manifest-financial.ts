@@ -81,11 +81,10 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: "Pro",
     price: 20,
     period: "monthly",
-    // Reduced from 50K to 25K credits for better margin
-    // cost: 25 × $0.198 = $4.95 → margin: $15.05 (75%)
-    description: "25,000 credits/month — all rehearsal modes, AI coaching, and recording tools",
+    // 40K credits: cost 40 × $0.198 = $7.92 → margin: $12.08 (60%)
+    description: "40,000 credits/month — all rehearsal modes, AI coaching, and recording tools",
     features: [
-      "25,000 credits per month (~25 min of AI audio)",
+      "40,000 credits per month (~40 min of AI audio)",
       "Unlimited scene runs",
       "All 10 rehearsal modes",
       "Full voice customisation (age, accent, gender, pitch, speed)",
@@ -109,10 +108,10 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Three acts (up to 120 pages)",
     ],
     maxCharacters: 10,
-    maxMinutes: 25,
+    maxMinutes: 40,
     costBreakdown: {
       voiceCostPerMin: COST_PER_1K_CREDITS,
-      includedMinutes: 25,
+      includedMinutes: 40,
       includedVoices: 10,
       overagePerMin: 0.80,    // block rate (per-min on smallest block)
       creditBlocks: CREDIT_BLOCKS,
