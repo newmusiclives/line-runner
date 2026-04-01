@@ -162,6 +162,15 @@ export interface SubscriptionStatus {
 
 export type PlanType = 'free' | 'single-script' | 'one-act-pass' | 'three-act-pass' | 'monthly' | 'annual' | 'studio';
 
+export interface CreditBlock {
+  id: string;
+  credits: number;
+  minutes: number;
+  price: number;
+  perMinute: number;
+  savings: string;
+}
+
 export interface PricingPlan {
   id: PlanType;
   name: string;
@@ -177,6 +186,7 @@ export interface PricingPlan {
     includedMinutes: number;
     includedVoices: number;
     overagePerMin: number;
+    creditBlocks?: CreditBlock[];
   };
   highlighted?: boolean;
 }

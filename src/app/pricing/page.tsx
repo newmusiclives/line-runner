@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { PricingPlan } from "@/types";
-import { PRICING_PLANS } from "@/lib/manifest-financial";
+import { PRICING_PLANS, CREDIT_BLOCKS } from "@/lib/manifest-financial";
 
 export default function PricingPage() {
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
@@ -47,7 +47,7 @@ export default function PricingPage() {
           <h1 className="text-2xl font-bold mb-4 text-center">Checkout</h1>
           <div className="bg-surface-light rounded-xl p-4 space-y-2 text-sm mb-8">
             <div className="flex justify-between"><span className="text-muted">Plan</span><span className="font-medium">{selectedPlan.name}</span></div>
-            <div className="flex justify-between"><span className="text-muted">Credits</span><span>{selectedPlan.id === "monthly" ? "50,000" : "150,000"}/month</span></div>
+            <div className="flex justify-between"><span className="text-muted">Credits</span><span>{selectedPlan.costBreakdown.includedMinutes * 1000}/month</span></div>
             <div className="border-t border-border pt-2 flex justify-between font-semibold">
               <span>Total</span><span>${selectedPlan.price}/month</span>
             </div>
@@ -98,7 +98,7 @@ export default function PricingPage() {
         <p className="text-muted text-lg">Start free. Upgrade when you&apos;re ready. Cancel anytime.</p>
       </div>
 
-      {/* Plans Grid — 4 columns */}
+      {/* Plans Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto mb-16">
         {/* Free */}
         <div className="bg-surface border border-border rounded-2xl p-7 flex flex-col">
@@ -132,19 +132,19 @@ export default function PricingPage() {
           <div className="text-sm text-muted mb-6">per month</div>
 
           <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 mb-5 text-center">
-            <div className="text-lg font-bold text-accent-light">50,000 credits</div>
-            <div className="text-xs text-muted">~50 minutes of AI audio/month</div>
+            <div className="text-lg font-bold text-accent-light">25,000 credits</div>
+            <div className="text-xs text-muted">~25 minutes of AI audio/month</div>
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
             {[
-              "50,000 credits/month", "Unlimited scene runs", "All 10 rehearsal modes",
-              "25 AI voices per script", "Full voice customisation",
+              "25,000 credits/month", "Unlimited scene runs", "All 10 rehearsal modes",
+              "10 AI voices per script", "Full voice customisation",
               "AI Performance Coach", "Subtext, Wildcard, Cold Read modes",
               "Objective & Obstacle, Dynamics sliders",
               "Self-Tape Studio with 1080p export",
               "Audition Vault + Scene Exchange",
-              "Annotations, Sleep Learning, Ritual Mode",
+              "Buy credit blocks when you need more",
             ].map((f) => (
               <li key={f} className="flex items-start gap-2 text-sm text-muted">
                 <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
@@ -163,14 +163,14 @@ export default function PricingPage() {
           <div className="text-sm text-muted mb-6">per month</div>
 
           <div className="bg-success/10 border border-success/20 rounded-xl p-3 mb-5 text-center">
-            <div className="text-lg font-bold text-success">150,000 credits</div>
-            <div className="text-xs text-muted">~150 minutes of AI audio/month</div>
+            <div className="text-lg font-bold text-success">75,000 credits</div>
+            <div className="text-xs text-muted">~75 minutes of AI audio/month</div>
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
             {[
-              "150,000 credits/month",
-              "Everything in Pro",
+              "75,000 credits/month",
+              "Everything in Pro + 25 voices",
               "VO Professional Suite (10 tools)",
               "Demo Reel Producer (7 genres)",
               "Client Delivery Portal",
@@ -180,7 +180,7 @@ export default function PricingPage() {
               "PASS fan memberships (earn)",
               "Voice Print Builder (ElevenLabs)",
               "STUDIO Business Dashboard",
-              "Priority support",
+              "Credit blocks at best rates",
             ].map((f) => (
               <li key={f} className="flex items-start gap-2 text-sm">
                 <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
@@ -228,6 +228,30 @@ export default function PricingPage() {
         </div>
       </div>
 
+      {/* Credit Blocks */}
+      <div className="max-w-4xl mx-auto mb-16">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold mb-2">Need more credits?</h2>
+          <p className="text-muted">Pro and Studio subscribers can buy credit blocks anytime. No expiry — use them at your own pace.</p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {CREDIT_BLOCKS.map((block) => (
+            <div key={block.id} className={`bg-surface border rounded-2xl p-5 text-center relative ${block.savings === "Best value" ? "border-success shadow-lg shadow-success/10" : "border-border"}`}>
+              {block.savings && (
+                <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-0.5 rounded-full ${block.savings === "Best value" ? "bg-success text-white" : "bg-accent/15 text-accent-light"}`}>
+                  {block.savings}
+                </div>
+              )}
+              <div className="text-2xl font-bold mt-1">{block.minutes} min</div>
+              <div className="text-xs text-muted mb-3">{block.credits.toLocaleString()} credits</div>
+              <div className="text-3xl font-bold text-accent-light">${block.price}</div>
+              <div className="text-xs text-muted mt-1">${block.perMinute.toFixed(2)}/min</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Credits Explainer */}
       <div className="max-w-3xl mx-auto bg-surface border border-border rounded-2xl p-8 mb-16">
         <h2 className="text-2xl font-bold text-center mb-6">How credits work</h2>
@@ -264,15 +288,15 @@ export default function PricingPage() {
             </thead>
             <tbody>
               {[
-                { feature: "Monthly credits", free: "2,500", pro: "50,000", studio: "150,000", enterprise: "Unlimited" },
+                { feature: "Monthly credits", free: "2,500", pro: "25,000", studio: "75,000", enterprise: "Unlimited" },
+                { feature: "Credit blocks", free: "—", pro: "From $8", studio: "From $8", enterprise: "Volume" },
                 { feature: "Scene runs", free: "1/month", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
-                { feature: "AI voices per script", free: "3", pro: "25", studio: "25", enterprise: "25+" },
+                { feature: "AI voices per script", free: "3", pro: "10", studio: "25", enterprise: "25+" },
                 { feature: "Rehearsal modes", free: "1", pro: "10", studio: "10", enterprise: "10" },
                 { feature: "Script analysis on upload", free: true, pro: true, studio: true, enterprise: true },
                 { feature: "AI Performance Coach", free: false, pro: true, studio: true, enterprise: true },
                 { feature: "Subtext, Wildcard, Cold Read", free: false, pro: true, studio: true, enterprise: true },
                 { feature: "Objective & Obstacle Mode", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "Relationship Dynamics", free: false, pro: true, studio: true, enterprise: true },
                 { feature: "Self-Tape Studio + export", free: false, pro: true, studio: true, enterprise: true },
                 { feature: "Audition Vault", free: false, pro: true, studio: true, enterprise: true },
                 { feature: "Scene Exchange", free: false, pro: true, studio: true, enterprise: true },
@@ -283,7 +307,6 @@ export default function PricingPage() {
                 { feature: "STUDIO Dashboard", free: false, pro: false, studio: true, enterprise: true },
                 { feature: "Multi-seat admin", free: false, pro: false, studio: false, enterprise: true },
                 { feature: "SSO / institutional login", free: false, pro: false, studio: false, enterprise: true },
-                { feature: "Dedicated account manager", free: false, pro: false, studio: false, enterprise: true },
               ].map((row) => (
                 <tr key={row.feature} className="border-b border-border/50">
                   <td className="py-3 px-4">{row.feature}</td>
@@ -323,11 +346,12 @@ export default function PricingPage() {
         <div className="space-y-4">
           {[
             { q: "What are credits?", a: "1 credit = 1 character of AI-generated dialogue. A typical script page contains about 1,000 characters of dialogue, which equals roughly 1 minute of AI audio. Only the AI characters' lines consume credits — your lines are spoken live and cost nothing." },
-            { q: "What happens if I run out of credits?", a: "On the Free plan, you'll need to wait until next month. On Pro and Studio, you can purchase additional credit packs or upgrade your plan. We'll notify you when you're approaching your limit." },
+            { q: "What happens if I run out of credits?", a: "On the Free plan, you'll need to wait until next month. On Pro and Studio, you can instantly buy credit blocks starting at $8 for 10 minutes. Credits never expire — use them whenever you need them." },
+            { q: "What are credit blocks?", a: "Credit blocks are one-time purchases of extra credits for Pro and Studio subscribers. They come in 4 sizes: 10 min ($8), 30 min ($20), 60 min ($35), and 120 min ($60). Larger blocks offer a better per-minute rate. Credits from blocks never expire." },
             { q: "Is the Free plan really free?", a: "Yes. No credit card required. You get 1 complete scene run per month with 2,500 credits, basic AI voices, and script analysis. Upgrade anytime." },
-            { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, and 50,000 credits. Studio triples your credits to 150,000 and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
+            { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, and 25,000 credits. Studio triples your credits to 75,000 and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
             { q: "What about stage schools and theatre companies?", a: "Enterprise plans include unlimited credits, multi-seat admin, student & faculty accounts, Director's Cut for teacher collaboration, custom curriculum, SSO, and annual invoicing. Contact enterprise@linerunner.app for a custom quote." },
-            { q: "Can I cancel anytime?", a: "Yes. Pro and Studio are monthly subscriptions with no lock-in. Cancel anytime and keep access through the end of your billing period." },
+            { q: "Can I cancel anytime?", a: "Yes. Pro and Studio are monthly subscriptions with no lock-in. Cancel anytime and keep access through the end of your billing period. Unused credit blocks carry over." },
             { q: "How do income features work?", a: "Studio subscribers can sell Monologue Masterclasses (you keep 85%), set up PASS fan memberships ($3/$9/$19 tiers, you keep 85%), build ElevenLabs voice prints, and use the Client Delivery Portal (3% transaction fee). All earnings are visible in the STUDIO dashboard with monthly payouts." },
             { q: "Who processes payments?", a: "All payments are securely processed by Manifest Financial. We never store your card details." },
           ].map((faq) => (
