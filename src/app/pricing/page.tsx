@@ -108,12 +108,12 @@ export default function PricingPage() {
           <div className="text-sm text-muted mb-6">forever</div>
 
           <div className="bg-surface-light rounded-xl p-3 mb-5 text-center">
-            <div className="text-lg font-bold text-foreground">3 scenes</div>
-            <div className="text-xs text-muted">per month</div>
+            <div className="text-lg font-bold text-foreground">1 scene</div>
+            <div className="text-xs text-muted">per month · 2,500 credits</div>
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
-            {["3 complete scene runs/month", "3 basic AI voices", "Script analysis on upload", "Standard rehearsal mode", "Line Memory Tracker"].map((f) => (
+            {["1 complete scene run/month", "2,500 credits (~2.5 min AI audio)", "3 basic AI voices", "Script analysis on upload", "Standard rehearsal mode", "Line Memory Tracker"].map((f) => (
               <li key={f} className="flex items-start gap-2 text-sm text-muted">
                 <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                 {f}
@@ -264,8 +264,8 @@ export default function PricingPage() {
             </thead>
             <tbody>
               {[
-                { feature: "Monthly credits", free: "—", pro: "50,000", studio: "150,000", enterprise: "Unlimited" },
-                { feature: "Scene runs", free: "3/month", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
+                { feature: "Monthly credits", free: "2,500", pro: "50,000", studio: "150,000", enterprise: "Unlimited" },
+                { feature: "Scene runs", free: "1/month", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
                 { feature: "AI voices per script", free: "3", pro: "25", studio: "25", enterprise: "25+" },
                 { feature: "Rehearsal modes", free: "1", pro: "10", studio: "10", enterprise: "10" },
                 { feature: "Script analysis on upload", free: true, pro: true, studio: true, enterprise: true },
@@ -324,7 +324,7 @@ export default function PricingPage() {
           {[
             { q: "What are credits?", a: "1 credit = 1 character of AI-generated dialogue. A typical script page contains about 1,000 characters of dialogue, which equals roughly 1 minute of AI audio. Only the AI characters' lines consume credits — your lines are spoken live and cost nothing." },
             { q: "What happens if I run out of credits?", a: "On the Free plan, you'll need to wait until next month. On Pro and Studio, you can purchase additional credit packs or upgrade your plan. We'll notify you when you're approaching your limit." },
-            { q: "Is the Free plan really free?", a: "Yes. No credit card required. You get 3 complete scene runs per month with basic AI voices and script analysis. Upgrade anytime." },
+            { q: "Is the Free plan really free?", a: "Yes. No credit card required. You get 1 complete scene run per month with 2,500 credits, basic AI voices, and script analysis. Upgrade anytime." },
             { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, and 50,000 credits. Studio triples your credits to 150,000 and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
             { q: "What about stage schools and theatre companies?", a: "Enterprise plans include unlimited credits, multi-seat admin, student & faculty accounts, Director's Cut for teacher collaboration, custom curriculum, SSO, and annual invoicing. Contact enterprise@linerunner.app for a custom quote." },
             { q: "Can I cancel anytime?", a: "Yes. Pro and Studio are monthly subscriptions with no lock-in. Cancel anytime and keep access through the end of your billing period." },

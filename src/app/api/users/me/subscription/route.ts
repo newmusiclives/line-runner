@@ -21,7 +21,7 @@ export async function GET() {
       planName: "Free",
       status: "active",
       minutesUsed: 0,
-      minutesIncluded: 15,
+      minutesIncluded: 2.5,
       currentPeriodEnd: new Date(Date.now() + 30 * 86400000).toISOString(),
     });
   }

@@ -21,7 +21,8 @@ export const PRICING_PLANS: PricingPlan[] = [
     period: "monthly",
     description: "Try Line Runner — no credit card required",
     features: [
-      "3 complete scene runs per month",
+      "1 complete scene run per month",
+      "2,500 credits (~2.5 min of AI audio)",
       "Basic AI voice options (3 voices)",
       "Script analysis on upload",
       "Standard rehearsal mode",
@@ -29,10 +30,10 @@ export const PRICING_PLANS: PricingPlan[] = [
     ],
     scriptLengths: ["Short episode (up to 15 pages)"],
     maxCharacters: 3,
-    maxMinutes: 5,
+    maxMinutes: 2.5,
     costBreakdown: {
       voiceCostPerMin: COST_PER_1K_CREDITS,
-      includedMinutes: 5,
+      includedMinutes: 2.5,
       includedVoices: 3,
       overagePerMin: 0,
     },
