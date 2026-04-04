@@ -84,6 +84,83 @@ const services: ServiceConfig[] = [
     ],
     testId: "google",
   },
+  {
+    id: "claude",
+    name: "Claude AI (Anthropic)",
+    description: "AI-powered script analysis, performance coaching, and emotion detection",
+    color: "bg-amber-500",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"
+      />
+    ),
+    fields: [
+      { key: "claude_api_key", label: "API Key", type: "password", placeholder: "sk-ant-..." },
+    ],
+    testId: "claude",
+  },
+  {
+    id: "smtp",
+    name: "Email (SMTP)",
+    description: "Send password resets, welcome emails, and notifications",
+    color: "bg-cyan-500",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+      />
+    ),
+    fields: [
+      { key: "smtp_host", label: "SMTP Host", type: "text", placeholder: "smtp.gmail.com" },
+      { key: "smtp_port", label: "Port", type: "text", placeholder: "587" },
+      { key: "smtp_user", label: "Username", type: "text", placeholder: "you@gmail.com" },
+      { key: "smtp_pass", label: "Password", type: "password", placeholder: "app-password" },
+      { key: "smtp_from_email", label: "From Email", type: "text", placeholder: "noreply@linerunner.app" },
+      { key: "smtp_from_name", label: "From Name", type: "text", placeholder: "Line Runner" },
+    ],
+    testId: "smtp",
+  },
+  {
+    id: "storage",
+    name: "Cloud Storage (S3)",
+    description: "Store audio files in S3-compatible storage (R2, MinIO, AWS S3)",
+    color: "bg-teal-500",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"
+      />
+    ),
+    fields: [
+      { key: "storage_endpoint", label: "Endpoint URL", type: "text", placeholder: "https://your-account.r2.cloudflarestorage.com" },
+      { key: "storage_bucket", label: "Bucket Name", type: "text", placeholder: "line-runner-audio" },
+      { key: "storage_access_key", label: "Access Key", type: "password", placeholder: "AKIA..." },
+      { key: "storage_secret_key", label: "Secret Key", type: "password", placeholder: "wJal..." },
+      { key: "storage_public_url", label: "Public URL (optional)", type: "text", placeholder: "https://cdn.yoursite.com" },
+    ],
+    testId: "storage",
+  },
+  {
+    id: "sentry",
+    name: "Sentry",
+    description: "Error monitoring and performance tracking",
+    color: "bg-pink-500",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 12.75c1.148 0 2.278.08 3.383.237 1.037.146 1.866.966 1.866 2.013 0 3.728-2.35 6.75-5.25 6.75S6.75 18.728 6.75 15c0-1.046.83-1.867 1.866-2.013A24.204 24.204 0 0112 12.75zm0 0c2.883 0 5.647.508 8.207 1.44a23.91 23.91 0 01-1.152 6.06M12 12.75c-2.883 0-5.647.508-8.208 1.44.125 2.104.52 4.136 1.153 6.06M12 12.75a2.25 2.25 0 002.248-2.354M12 12.75a2.25 2.25 0 01-2.248-2.354M12 8.25c.995 0 1.971-.08 2.922-.236.403-.066.74-.358.795-.762a3.778 3.778 0 00-.399-2.25M12 8.25c-.995 0-1.97-.08-2.922-.236-.402-.066-.74-.358-.795-.762a3.734 3.734 0 01.4-2.253M12 8.25a2.25 2.25 0 00-2.248 2.146M12 8.25a2.25 2.25 0 012.248 2.146M8.683 5a6.032 6.032 0 01-1.155-1.002c.07-.63.27-1.222.574-1.747m.581 2.749A3.75 3.75 0 0112 3.75a3.75 3.75 0 013.317 1.25m-6.634 0a3.75 3.75 0 00-.581-2.749"
+      />
+    ),
+    fields: [
+      { key: "sentry_dsn", label: "DSN", type: "text", placeholder: "https://xxxxx@sentry.io/xxxxx" },
+    ],
+    testId: "sentry",
+  },
 ];
 
 interface FieldState {
@@ -326,6 +403,33 @@ export default function AdminIntegrationsPage() {
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-2 text-muted">
               <svg className="w-4 h-4 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Claude AI usage guide */}
+      <div className="mt-6 bg-surface border border-border rounded-2xl p-6">
+        <h3 className="font-semibold mb-3">Claude AI Integration Guide</h3>
+        <p className="text-sm text-muted mb-4">
+          When connected, Claude AI powers intelligent features across Line Runner:
+        </p>
+        <div className="grid sm:grid-cols-2 gap-3 text-sm">
+          {[
+            "Deep script analysis — genre, tone, character arcs",
+            "AI Performance Coach with per-line feedback",
+            "Intelligent emotion detection beyond keywords",
+            "Director's notes with character motivation insights",
+            "Subtext suggestions for character intention",
+            "Smart sound effect cue suggestions",
+            "Pronunciation guidance for difficult words",
+            "Memorisation difficulty assessment",
+          ].map((item, i) => (
+            <div key={i} className="flex items-start gap-2 text-muted">
+              <svg className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
               {item}

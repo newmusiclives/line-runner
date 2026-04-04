@@ -1,0 +1,32 @@
+{
+  "appId": "app.linerunner.rehearse",
+  "appName": "Line Runner",
+  "webDir": "out",
+  "server": {
+    "url": "https://rehearse-perform-earn.netlify.app",
+    "cleartext": false
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile",
+    "scheme": "Line Runner"
+  },
+  "android": {
+    "buildOptions": {}
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0f0f13",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#0f0f13"
+    },
+    "Keyboard": {
+      "resize": "body",
+      "style": "dark"
+    }
+  }
+}

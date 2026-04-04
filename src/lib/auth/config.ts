@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import { getUserByEmail, verifyPassword, createUser, getUserById } from "@/lib/db/users";
+import { getUserByEmail, verifyPassword, createUser } from "@/lib/db/users";
 import { ensureTable, getSetting } from "@/lib/db/integrations";
 import { syncContactToGhl } from "@/lib/gohighlevel";
 
@@ -125,5 +125,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET || "dev-secret-change-in-production",
+  secret: process.env.NEXTAUTH_SECRET || "lr-secret-change-me-in-env-vars-2026",
 });

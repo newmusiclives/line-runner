@@ -92,6 +92,22 @@ const FEATURE_CATEGORIES: { name: string; description: string; keys: string[] }[
       "performance_analytics",
     ],
   },
+  {
+    name: "Platform & Growth",
+    description: "Referrals, audition tracking, mobile, and infrastructure",
+    keys: [
+      "referral_system",
+      "audition_tracker",
+      "credit_blocks",
+      "voice_chat",
+      "waveform_editor",
+      "invoice_pdf",
+      "cloud_storage",
+      "i18n",
+      "mobile_app",
+      "error_tracking",
+    ],
+  },
 ];
 
 const formatFlagName = (key: string) =>
@@ -242,6 +258,17 @@ export default function AdminSettingsPage() {
       pass_memberships: "studio",
       studio_dashboard: "studio",
       voice_print: "studio",
+      // New features
+      referral_system: "free",
+      audition_tracker: "pro",
+      credit_blocks: "pro",
+      voice_chat: "pro",
+      waveform_editor: "studio",
+      invoice_pdf: "studio",
+      cloud_storage: "studio",
+      i18n: "free",
+      mobile_app: "free",
+      error_tracking: "free",
     };
 
     try {

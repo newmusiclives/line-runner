@@ -617,7 +617,7 @@ export interface NegotiationScript {
 }
 
 // ─── Feature 30: VO Genre Training ─────────────────────────
-export type VOGenre = 'commercial' | 'audiobook' | 'e-learning' | 'character' | 'medical' | 'promo' | 'podcast';
+export type VOGenre = 'commercial' | 'audiobook' | 'e-learning' | 'character' | 'medical' | 'promo' | 'podcast' | 'narration' | 'trailer';
 export type CurriculumLevel = 1 | 2 | 3 | 4 | 5;
 
 export interface CurriculumModule {

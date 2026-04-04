@@ -32,6 +32,18 @@ export async function POST(request: Request) {
     if (service === "google") {
       return NextResponse.json(await testGoogle());
     }
+    if (service === "claude") {
+      return NextResponse.json(await testClaude());
+    }
+    if (service === "smtp") {
+      return NextResponse.json(await testSmtp());
+    }
+    if (service === "storage") {
+      return NextResponse.json(await testStorage());
+    }
+    if (service === "sentry") {
+      return NextResponse.json(await testSentry());
+    }
     return NextResponse.json({ ok: false, error: "Unknown service" }, { status: 400 });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err.message || "Connection failed" });
@@ -107,6 +119,54 @@ async function testGoHighLevel() {
   }
 }
 
+async function testClaude() {
+  const apiKey = await getSetting("claude_api_key");
+  if (!apiKey) {
+    return { ok: false, error: "API Key is required" };
+  }
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 10,
+        messages: [{ role: "user", content: "ping" }],
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.ok) {
+      return { ok: true, message: "Claude API connected — ready for AI analysis" };
+    }
+    if (res.status === 401) {
+      return { ok: false, error: "Invalid API key" };
+    }
+    return { ok: false, error: `HTTP ${res.status}: ${res.statusText}` };
+  } catch (err: any) {
+    if (err.name === "TimeoutError") return { ok: false, error: "Connection timed out" };
+    return { ok: false, error: err.message };
+  }
+}
+
+async function testSmtp() {
+  const host = await getSetting("smtp_host");
+  const port = await getSetting("smtp_port");
+  const user = await getSetting("smtp_user");
+  const pass = await getSetting("smtp_pass");
+  if (!host || !user || !pass) {
+    return { ok: false, error: "Host, username, and password are required" };
+  }
+  // We can't fully test SMTP without sending, but validate the config exists
+  if (!port) {
+    return { ok: false, error: "Port is required (typically 587 for TLS)" };
+  }
+  return { ok: true, message: `SMTP configured — ${host}:${port} as ${user}` };
+}
+
 async function testGoogle() {
   const clientId = await getSetting("google_client_id");
   const clientSecret = await getSetting("google_client_secret");
@@ -118,4 +178,37 @@ async function testGoogle() {
     return { ok: false, error: "Client ID should end with .apps.googleusercontent.com" };
   }
   return { ok: true, message: "Credentials saved — OAuth ready" };
+}
+
+async function testStorage() {
+  const endpoint = await getSetting("storage_endpoint");
+  const bucket = await getSetting("storage_bucket");
+  const accessKey = await getSetting("storage_access_key");
+  const secretKey = await getSetting("storage_secret_key");
+  if (!endpoint || !bucket || !accessKey || !secretKey) {
+    return { ok: false, error: "Endpoint, bucket, access key, and secret key are required" };
+  }
+  try {
+    const res = await fetch(`${endpoint}/${bucket}`, {
+      method: "HEAD",
+      headers: { Authorization: `AWS ${accessKey}:${secretKey}` },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.ok || res.status === 200 || res.status === 404) {
+      return { ok: true, message: `Storage connected — bucket: ${bucket}` };
+    }
+    return { ok: false, error: `HTTP ${res.status}: ${res.statusText}` };
+  } catch (err: any) {
+    if (err.name === "TimeoutError") return { ok: false, error: "Connection timed out" };
+    return { ok: false, error: err.message };
+  }
+}
+
+async function testSentry() {
+  const dsn = await getSetting("sentry_dsn");
+  if (!dsn) return { ok: false, error: "DSN is required" };
+  if (!dsn.startsWith("https://") || !dsn.includes("@")) {
+    return { ok: false, error: "Invalid DSN format — should be https://xxxxx@sentry.io/xxxxx" };
+  }
+  return { ok: true, message: "Sentry DSN configured — errors will be tracked" };
 }

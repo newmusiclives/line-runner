@@ -18,6 +18,23 @@ const VALID_KEYS = [
   // Google OAuth
   "google_client_id",
   "google_client_secret",
+  // Claude AI
+  "claude_api_key",
+  // SMTP Email
+  "smtp_host",
+  "smtp_port",
+  "smtp_user",
+  "smtp_pass",
+  "smtp_from_email",
+  "smtp_from_name",
+  // Cloud Storage (S3-compatible)
+  "storage_endpoint",
+  "storage_bucket",
+  "storage_access_key",
+  "storage_secret_key",
+  "storage_public_url",
+  // Sentry
+  "sentry_dsn",
 ] as const;
 
 export type IntegrationKey = (typeof VALID_KEYS)[number];

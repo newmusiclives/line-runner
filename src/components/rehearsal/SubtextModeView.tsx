@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { ScriptLine, SubtextConfig } from "@/types";
 
 interface SubtextModeViewProps {

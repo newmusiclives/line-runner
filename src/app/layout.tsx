@@ -5,6 +5,9 @@ import { auth } from "@/lib/auth/config";
 import SessionProvider from "@/components/auth/SessionProvider";
 import NavAuth from "@/components/auth/NavAuth";
 import EarnDropdown from "@/components/nav/EarnDropdown";
+import SkipNav from "@/components/SkipNav";
+import { AriaLiveProvider } from "@/components/AriaLive";
+import { I18nProvider } from "@/lib/i18n/context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -54,6 +57,9 @@ export default async function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <SkipNav />
+        <AriaLiveProvider>
+        <I18nProvider>
         <nav className="border-b border-border bg-surface/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
@@ -100,7 +106,7 @@ export default async function RootLayout({
         </nav>
 
         <SessionProvider>
-          <main className="flex-1">{children}</main>
+          <main id="main-content" className="flex-1">{children}</main>
         </SessionProvider>
 
         <footer className="border-t border-border bg-surface/50 py-8">
@@ -123,6 +129,8 @@ export default async function RootLayout({
             </div>
           </div>
         </footer>
+        </I18nProvider>
+        </AriaLiveProvider>
       </body>
     </html>
   );

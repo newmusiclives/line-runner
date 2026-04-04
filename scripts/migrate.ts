@@ -52,6 +52,8 @@ async function migrate() {
     'masterclass', 'pass_memberships', 'studio_dashboard', 'audio_quality', 'pronunciation',
     'breath_detector', 'adr_mode', 'copy_timing', 'voice_consistency', 'demo_reel',
     'client_delivery', 'rate_calculator', 'vo_curriculum',
+    'waveform_editor', 'audition_tracker', 'referral_system', 'credit_blocks',
+    'voice_chat', 'cloud_storage', 'i18n', 'mobile_app', 'error_tracking', 'invoice_pdf',
   ];
   for (const key of flags) {
     await sql`INSERT INTO feature_flags (key, enabled) VALUES (${key}, true) ON CONFLICT (key) DO NOTHING`;

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import VoiceChat from "@/components/VoiceChat";
 
 interface ExchangeRoom {
   id: string;
@@ -22,6 +24,8 @@ interface UserScript {
 }
 
 export default function SceneExchangePage() {
+  const { data: sessionData } = useSession();
+  const currentUserId = sessionData?.user?.id ?? null;
   const [tab, setTab] = useState<"find" | "host">("find");
   const [rooms, setRooms] = useState<ExchangeRoom[]>([]);
   const [scripts, setScripts] = useState<UserScript[]>([]);
@@ -181,42 +185,63 @@ export default function SceneExchangePage() {
             <div className="text-center py-12 text-muted">No rooms available. Be the first to host a session.</div>
           ) : (
             <div className="space-y-3">
-              {rooms.map((room) => (
-                <div key={room.id} className="bg-surface border border-border rounded-xl p-5 flex items-center justify-between hover:border-accent/30 transition-colors">
-                  <div>
-                    <h3 className="font-semibold">{room.script_title}</h3>
-                    <div className="flex gap-4 text-sm text-muted mt-1">
-                      <span>Host: {room.host_name} as {room.host_character}</span>
-                      <span>Looking for: <span className="text-accent-light font-medium">{room.guest_character}</span></span>
-                      {room.guest_name && (
-                        <span>Guest: {room.guest_name}</span>
-                      )}
+              {rooms.map((room) => {
+                const isParticipant =
+                  currentUserId === room.host_user_id ||
+                  currentUserId === room.guest_user_id;
+                const partnerId =
+                  currentUserId === room.host_user_id
+                    ? room.guest_user_id
+                    : room.host_user_id;
+
+                return (
+                  <div key={room.id} className="bg-surface border border-border rounded-xl p-5 hover:border-accent/30 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold">{room.script_title}</h3>
+                        <div className="flex gap-4 text-sm text-muted mt-1">
+                          <span>Host: {room.host_name} as {room.host_character}</span>
+                          <span>Looking for: <span className="text-accent-light font-medium">{room.guest_character}</span></span>
+                          {room.guest_name && (
+                            <span>Guest: {room.guest_name}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${room.status === "waiting" ? "bg-warning/15 text-warning" : room.status === "active" ? "bg-success/15 text-success" : "bg-muted/15 text-muted"}`}>
+                          {room.status === "waiting" ? "Waiting" : room.status === "active" ? "In Progress" : "Completed"}
+                        </span>
+                        {room.status === "waiting" && (
+                          <button
+                            onClick={() => handleJoinRoom(room.id)}
+                            disabled={joining === room.id}
+                            className="bg-accent hover:bg-accent-dark text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors disabled:opacity-50"
+                          >
+                            {joining === room.id ? "Joining..." : "Join"}
+                          </button>
+                        )}
+                        {room.status === "active" && (
+                          <button
+                            onClick={() => handleLeaveRoom(room.id)}
+                            className="bg-surface-light hover:bg-border text-foreground font-medium px-5 py-2 rounded-lg text-sm transition-colors"
+                          >
+                            Leave
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${room.status === "waiting" ? "bg-warning/15 text-warning" : room.status === "active" ? "bg-success/15 text-success" : "bg-muted/15 text-muted"}`}>
-                      {room.status === "waiting" ? "Waiting" : room.status === "active" ? "In Progress" : "Completed"}
-                    </span>
-                    {room.status === "waiting" && (
-                      <button
-                        onClick={() => handleJoinRoom(room.id)}
-                        disabled={joining === room.id}
-                        className="bg-accent hover:bg-accent-dark text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors disabled:opacity-50"
-                      >
-                        {joining === room.id ? "Joining..." : "Join"}
-                      </button>
-                    )}
-                    {room.status === "active" && (
-                      <button
-                        onClick={() => handleLeaveRoom(room.id)}
-                        className="bg-surface-light hover:bg-border text-foreground font-medium px-5 py-2 rounded-lg text-sm transition-colors"
-                      >
-                        Leave
-                      </button>
+                    {room.status === "active" && isParticipant && currentUserId && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <VoiceChat
+                          roomId={room.id}
+                          userId={currentUserId}
+                          partnerId={partnerId}
+                        />
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
