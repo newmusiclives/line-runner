@@ -8,7 +8,7 @@ const COST_PER_1K_CREDITS = 0.198;
 const PLANS = [
   { name: "Free", price: 0, credits: 2_500, minutes: 2.5, cost: 0.5 },
   { name: "Pro", price: 20, credits: 40_000, minutes: 40, cost: 7.92 },
-  { name: "Studio", price: 90, credits: 75_000, minutes: 75, cost: 14.85 },
+  { name: "Studio", price: 70, credits: 75_000, minutes: 75, cost: 14.85 },
 ] as const;
 
 const CREDIT_BLOCKS = [
@@ -53,7 +53,7 @@ export default function CalculatorPage() {
 
   // Section 5: Pricing simulator
   const [simProPrice, setSimProPrice] = useState(20);
-  const [simStudioPrice, setSimStudioPrice] = useState(90);
+  const [simStudioPrice, setSimStudioPrice] = useState(70);
 
   // ── Derived: Section 3 ──────────────────────────────────────────
   const selectedBlock = CREDIT_BLOCKS.find((b) => b.label === blockSize)!;

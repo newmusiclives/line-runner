@@ -214,7 +214,7 @@ export default function HomePage() {
             </div>
             <div className="bg-surface border border-border rounded-2xl p-8">
               <h3 className="text-xl font-bold mb-1">Studio</h3>
-              <div className="text-2xl font-bold mb-1">$90<span className="text-lg text-muted font-normal">/mo</span></div>
+              <div className="text-2xl font-bold mb-1">$70<span className="text-lg text-muted font-normal">/mo</span></div>
               <div className="text-xs text-success mb-4">75,000 credits/month</div>
               <ul className="space-y-2 text-sm text-muted text-left mb-6">
                 <li className="flex items-center gap-2"><svg className="w-4 h-4 text-success shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg><span className="text-foreground font-medium">Everything in Pro + 25 voices</span></li>

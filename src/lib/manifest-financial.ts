@@ -121,10 +121,9 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: "studio",
     name: "Studio",
-    price: 90,
+    price: 70,
     period: "monthly",
-    // Reduced from 150K to 75K credits for better margin
-    // cost: 75 × $0.198 = $14.85 → margin: $75.15 (83.5%)
+    // 75K credits: cost 75 × $0.198 = $14.85 → margin: $55.15 (78.8%)
     description: "75,000 credits/month — the complete professional platform with VO tools, income streams, and business dashboard",
     features: [
       "75,000 credits per month (~75 min of AI audio)",

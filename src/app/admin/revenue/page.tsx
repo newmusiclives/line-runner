@@ -24,7 +24,7 @@ interface PlanRevenue {
 const PLAN_DISPLAY: Record<string, string> = {
   free: "Free",
   monthly: "Pro ($20/mo — 50k credits)",
-  studio: "Studio ($90/mo — 150k credits)",
+  studio: "Studio ($70/mo — 75k credits)",
   enterprise: "Enterprise (custom)",
 };
 const formatPlanName = (id: string) => PLAN_DISPLAY[id] || id;

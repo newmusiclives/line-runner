@@ -452,7 +452,7 @@ export default function AdminSettingsPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-success/40" />
-              <span><strong>Studio</strong> — $90/mo subscribers</span>
+              <span><strong>Studio</strong> — $70/mo subscribers</span>
             </div>
           </div>
           <p className="mt-3">Use the <strong>toggle</strong> to fully disable a feature (hidden from everyone). Use the <strong>tier buttons</strong> to control which plan can access it. Click <strong>Apply MVP Defaults</strong> to set Free and Pro to minimal feature sets.</p>

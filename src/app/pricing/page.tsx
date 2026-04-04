@@ -163,7 +163,7 @@ export default function PricingPage() {
         <div className="bg-surface border border-border rounded-2xl p-7 flex flex-col">
           <h3 className="text-2xl font-bold mb-1">Studio</h3>
           <p className="text-sm text-muted mb-5">For professional actors and voice artists</p>
-          <div className="text-4xl font-bold mb-1">$90</div>
+          <div className="text-4xl font-bold mb-1">$70</div>
           <div className="text-sm text-muted mb-6">per month</div>
 
           <div className="bg-success/10 border border-success/20 rounded-xl p-3 mb-5 text-center">
