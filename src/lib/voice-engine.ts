@@ -1,39 +1,53 @@
 import { VoiceAssignment, Character } from "@/types";
 
-// Gemini TTS voice presets mapped by characteristics
+// Gemini TTS voice presets — full 30-voice catalog mapped by characteristics
 const GEMINI_VOICES: Record<
   string,
   { id: string; name: string; gender: string; age: string; accent: string }[]
 > = {
   "male-adult": [
-    { id: "Charon", name: "Charon", gender: "male", age: "adult", accent: "General American" },
-    { id: "Orus", name: "Orus", gender: "male", age: "adult", accent: "General American" },
-    { id: "Enceladus", name: "Enceladus", gender: "male", age: "adult", accent: "General American" },
-    { id: "Iapetus", name: "Iapetus", gender: "male", age: "adult", accent: "General American" },
+    { id: "Charon", name: "Charon", gender: "male", age: "adult", accent: "General American" }, // informative
+    { id: "Orus", name: "Orus", gender: "male", age: "adult", accent: "General American" }, // firm
+    { id: "Enceladus", name: "Enceladus", gender: "male", age: "adult", accent: "General American" }, // breathy
+    { id: "Iapetus", name: "Iapetus", gender: "male", age: "adult", accent: "General American" }, // clear
+    { id: "Algieba", name: "Algieba", gender: "male", age: "adult", accent: "General American" }, // smooth
+    { id: "Rasalgethi", name: "Rasalgethi", gender: "male", age: "adult", accent: "General American" }, // informative
+    { id: "Alnilam", name: "Alnilam", gender: "male", age: "adult", accent: "General American" }, // firm
+    { id: "Sadaltager", name: "Sadaltager", gender: "male", age: "adult", accent: "General American" }, // knowledgeable
   ],
   "male-young-adult": [
-    { id: "Puck", name: "Puck", gender: "male", age: "young-adult", accent: "General American" },
-    { id: "Fenrir", name: "Fenrir", gender: "male", age: "young-adult", accent: "General American" },
+    { id: "Puck", name: "Puck", gender: "male", age: "young-adult", accent: "General American" }, // upbeat
+    { id: "Fenrir", name: "Fenrir", gender: "male", age: "young-adult", accent: "General American" }, // excitable
+    { id: "Achird", name: "Achird", gender: "male", age: "young-adult", accent: "General American" }, // friendly
+    { id: "Zubenelgenubi", name: "Zubenelgenubi", gender: "male", age: "young-adult", accent: "General American" }, // casual
   ],
   "male-elderly": [
-    { id: "Umbriel", name: "Umbriel", gender: "male", age: "elderly", accent: "General American" },
-    { id: "Achird", name: "Achird", gender: "male", age: "elderly", accent: "General American" },
+    { id: "Umbriel", name: "Umbriel", gender: "male", age: "elderly", accent: "General American" }, // easy-going
+    { id: "Algenib", name: "Algenib", gender: "male", age: "elderly", accent: "General American" }, // gravelly
+    { id: "Gacrux", name: "Gacrux", gender: "male", age: "elderly", accent: "General American" }, // mature
+    { id: "Schedar", name: "Schedar", gender: "male", age: "elderly", accent: "General American" }, // even
   ],
   "female-adult": [
-    { id: "Kore", name: "Kore", gender: "female", age: "adult", accent: "General American" },
-    { id: "Aoede", name: "Aoede", gender: "female", age: "adult", accent: "General American" },
-    { id: "Leda", name: "Leda", gender: "female", age: "adult", accent: "General American" },
+    { id: "Kore", name: "Kore", gender: "female", age: "adult", accent: "General American" }, // firm
+    { id: "Aoede", name: "Aoede", gender: "female", age: "adult", accent: "General American" }, // breezy
+    { id: "Callirrhoe", name: "Callirrhoe", gender: "female", age: "adult", accent: "General American" }, // easy-going
+    { id: "Despina", name: "Despina", gender: "female", age: "adult", accent: "General American" }, // smooth
+    { id: "Erinome", name: "Erinome", gender: "female", age: "adult", accent: "General American" }, // clear
+    { id: "Sulafat", name: "Sulafat", gender: "female", age: "adult", accent: "General American" }, // warm
   ],
   "female-young-adult": [
-    { id: "Despina", name: "Despina", gender: "female", age: "young-adult", accent: "General American" },
-    { id: "Callirrhoe", name: "Callirrhoe", gender: "female", age: "young-adult", accent: "General American" },
+    { id: "Leda", name: "Leda", gender: "female", age: "young-adult", accent: "General American" }, // youthful
+    { id: "Laomedeia", name: "Laomedeia", gender: "female", age: "young-adult", accent: "General American" }, // upbeat
+    { id: "Sadachbia", name: "Sadachbia", gender: "female", age: "young-adult", accent: "General American" }, // lively
+    { id: "Pulcherrima", name: "Pulcherrima", gender: "female", age: "young-adult", accent: "General American" }, // forward
   ],
   "female-elderly": [
-    { id: "Autonoe", name: "Autonoe", gender: "female", age: "elderly", accent: "General American" },
-    { id: "Erinome", name: "Erinome", gender: "female", age: "elderly", accent: "General American" },
+    { id: "Autonoe", name: "Autonoe", gender: "female", age: "elderly", accent: "General American" }, // bright
+    { id: "Achernar", name: "Achernar", gender: "female", age: "elderly", accent: "General American" }, // soft
+    { id: "Vindemiatrix", name: "Vindemiatrix", gender: "female", age: "elderly", accent: "General American" }, // gentle
   ],
   "neutral-adult": [
-    { id: "Zephyr", name: "Zephyr", gender: "neutral", age: "adult", accent: "General American" },
+    { id: "Zephyr", name: "Zephyr", gender: "neutral", age: "adult", accent: "General American" }, // bright
   ],
 };
 
