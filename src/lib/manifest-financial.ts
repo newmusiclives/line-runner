@@ -1,11 +1,9 @@
 import { PricingPlan, CreditBlock } from "@/types";
 
-// ── ElevenLabs cost model ──────────────────────────────────────────
-// 1 credit = 1 character of text-to-speech
+// ── Gemini TTS cost model ─────────────────────────────────────────
+// Gemini TTS is billed per character via Google AI API
 // ~1,000 credits = ~1 minute of generated audio
-// ElevenLabs plans: $22/mo = 100K credits, $99/mo = 500K credits
-// Cost per 1K credits on $99 plan: $0.198
-// Cost per minute: $0.198
+// Cost per 1K credits: $0.198 (estimated usage-based)
 // ────────────────────────────────────────────────────────────────────
 
 const COST_PER_1K_CREDITS = 0.198;
@@ -142,7 +140,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       "VO Genre Training Curriculum (7 genres, 5 levels)",
       "Monologue Masterclass (sell your takes)",
       "Line Runner PASS (fan memberships)",
-      "Voice Print Builder (ElevenLabs)",
+      "Voice Print Builder (Gemini)",
       "STUDIO Business Dashboard",
       "Buy credit blocks at a discount",
       "Priority support",

@@ -1,39 +1,39 @@
 import { VoiceAssignment, Character } from "@/types";
 
-// ElevenLabs voice presets mapped by characteristics
-const ELEVENLABS_VOICES: Record<
+// Gemini TTS voice presets mapped by characteristics
+const GEMINI_VOICES: Record<
   string,
   { id: string; name: string; gender: string; age: string; accent: string }[]
 > = {
   "male-adult": [
-    { id: "ErXwobaYiN019PkySvjV", name: "Antoni", gender: "male", age: "adult", accent: "General American" },
-    { id: "VR6AewLTigWG4xSOukaG", name: "Arnold", gender: "male", age: "adult", accent: "General American" },
-    { id: "pNInz6obpgDQGcFmaJgB", name: "Adam", gender: "male", age: "adult", accent: "General American" },
-    { id: "yoZ06aMxZJJ28mfd3POQ", name: "Sam", gender: "male", age: "adult", accent: "General American" },
+    { id: "Charon", name: "Charon", gender: "male", age: "adult", accent: "General American" },
+    { id: "Orus", name: "Orus", gender: "male", age: "adult", accent: "General American" },
+    { id: "Enceladus", name: "Enceladus", gender: "male", age: "adult", accent: "General American" },
+    { id: "Iapetus", name: "Iapetus", gender: "male", age: "adult", accent: "General American" },
   ],
   "male-young-adult": [
-    { id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh", gender: "male", age: "young-adult", accent: "General American" },
-    { id: "GBv7mTt0atIp3Br8iCZE", name: "Thomas", gender: "male", age: "young-adult", accent: "British RP" },
+    { id: "Puck", name: "Puck", gender: "male", age: "young-adult", accent: "General American" },
+    { id: "Fenrir", name: "Fenrir", gender: "male", age: "young-adult", accent: "General American" },
   ],
   "male-elderly": [
-    { id: "SOYHLrjzK2X1ezoPC6cr", name: "Harry", gender: "male", age: "elderly", accent: "General American" },
-    { id: "ZQe5CZNOzWyzPSCn5a3c", name: "James", gender: "male", age: "elderly", accent: "British RP" },
+    { id: "Umbriel", name: "Umbriel", gender: "male", age: "elderly", accent: "General American" },
+    { id: "Achird", name: "Achird", gender: "male", age: "elderly", accent: "General American" },
   ],
   "female-adult": [
-    { id: "EXAVITQu4vr4xnSDxMaL", name: "Sarah", gender: "female", age: "adult", accent: "General American" },
-    { id: "MF3mGyEYCl7XYWbV9V6O", name: "Emily", gender: "female", age: "adult", accent: "General American" },
-    { id: "XB0fDUnXU5powFXDhCwa", name: "Charlotte", gender: "female", age: "adult", accent: "British RP" },
+    { id: "Kore", name: "Kore", gender: "female", age: "adult", accent: "General American" },
+    { id: "Aoede", name: "Aoede", gender: "female", age: "adult", accent: "General American" },
+    { id: "Leda", name: "Leda", gender: "female", age: "adult", accent: "General American" },
   ],
   "female-young-adult": [
-    { id: "jBpfuIE2acCO8z3wKNLl", name: "Gigi", gender: "female", age: "young-adult", accent: "General American" },
-    { id: "oWAxZDx7w5VEj9dCyTzz", name: "Grace", gender: "female", age: "young-adult", accent: "General American" },
+    { id: "Despina", name: "Despina", gender: "female", age: "young-adult", accent: "General American" },
+    { id: "Callirrhoe", name: "Callirrhoe", gender: "female", age: "young-adult", accent: "General American" },
   ],
   "female-elderly": [
-    { id: "ThT5KcBeYPX3keUQqHPh", name: "Dorothy", gender: "female", age: "elderly", accent: "General American" },
-    { id: "AZnzlk1XvdvUeBnXmlld", name: "Domi", gender: "female", age: "elderly", accent: "General American" },
+    { id: "Autonoe", name: "Autonoe", gender: "female", age: "elderly", accent: "General American" },
+    { id: "Erinome", name: "Erinome", gender: "female", age: "elderly", accent: "General American" },
   ],
   "neutral-adult": [
-    { id: "onwK4e9ZLuTAKqWW03F9", name: "Daniel", gender: "neutral", age: "adult", accent: "General American" },
+    { id: "Zephyr", name: "Zephyr", gender: "neutral", age: "adult", accent: "General American" },
   ],
 };
 
@@ -67,7 +67,7 @@ export function getDefaultVoiceAssignment(
   index: number
 ): VoiceAssignment {
   const key = `${character.suggestedGender}-${character.suggestedAge}`;
-  const voices = ELEVENLABS_VOICES[key] || ELEVENLABS_VOICES["neutral-adult"];
+  const voices = GEMINI_VOICES[key] || GEMINI_VOICES["neutral-adult"];
   const voice = voices[index % voices.length];
 
   return {
@@ -88,7 +88,7 @@ export function getVoicesForCategory(
 ): { id: string; name: string; accent: string }[] {
   const key = `${gender}-${age}`;
   return (
-    ELEVENLABS_VOICES[key]?.map((v) => ({
+    GEMINI_VOICES[key]?.map((v) => ({
       id: v.id,
       name: v.name,
       accent: v.accent,
@@ -176,13 +176,13 @@ export class BrowserVoiceEngine {
 }
 
 // Factory: fetch config and return the best available engine
-export async function createVoiceEngine(): Promise<BrowserVoiceEngine | ElevenLabsVoiceEngine> {
+export async function createVoiceEngine(): Promise<BrowserVoiceEngine | GeminiVoiceEngine> {
   try {
     const res = await fetch("/api/voice/config");
     if (res.ok) {
       const { engine, apiKey } = await res.json();
-      if (engine === "elevenlabs" && apiKey) {
-        return new ElevenLabsVoiceEngine(apiKey);
+      if (engine === "gemini" && apiKey) {
+        return new GeminiVoiceEngine(apiKey);
       }
     }
   } catch {
@@ -191,8 +191,8 @@ export async function createVoiceEngine(): Promise<BrowserVoiceEngine | ElevenLa
   return new BrowserVoiceEngine();
 }
 
-// ElevenLabs API integration — same speak(text, assignment, onEnd) interface as BrowserVoiceEngine
-export class ElevenLabsVoiceEngine {
+// Gemini TTS API integration — same speak(text, assignment, onEnd) interface as BrowserVoiceEngine
+export class GeminiVoiceEngine {
   private apiKey: string;
   private audioContext: AudioContext | null = null;
   private currentSource: AudioBufferSourceNode | null = null;
@@ -209,7 +209,7 @@ export class ElevenLabsVoiceEngine {
     onEnd?: () => void
   ): null {
     this.speakAsync(text, assignment, onEnd).catch(() => {
-      // Fall back to browser TTS on any ElevenLabs error
+      // Fall back to browser TTS on any Gemini error
       this.browserFallback.speak(text, assignment, onEnd);
     });
     return null;
@@ -224,36 +224,52 @@ export class ElevenLabsVoiceEngine {
       this.audioContext = new AudioContext();
     }
 
-    const voiceId = assignment.voiceId;
+    const voiceName = assignment.voiceId;
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${this.apiKey}`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "xi-api-key": this.apiKey,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text,
-          model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            speed: assignment.rate ?? 1.0,
+          contents: [{ parts: [{ text }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName },
+              },
+            },
           },
         }),
       }
     );
 
     if (!response.ok) {
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      throw new Error(`Gemini TTS API error: ${response.status}`);
     }
 
-    const audioData = await response.arrayBuffer();
-    const audioBuffer = await this.audioContext.decodeAudioData(audioData);
+    const data = await response.json();
+    const audioBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!audioBase64) {
+      throw new Error("No audio data in Gemini response");
+    }
 
+    // Gemini returns L16 PCM at 24000 Hz — decode to AudioBuffer
+    const raw = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
+    const pcm = new Int16Array(raw.buffer);
+    const floats = new Float32Array(pcm.length);
+    for (let i = 0; i < pcm.length; i++) {
+      floats[i] = pcm[i] / 32768;
+    }
+
+    const sampleRate = 24000;
+    const audioBuffer = this.audioContext.createBuffer(1, floats.length, sampleRate);
+    audioBuffer.getChannelData(0).set(floats);
+
+    // Apply playback rate from assignment
     this.currentSource = this.audioContext.createBufferSource();
     this.currentSource.buffer = audioBuffer;
+    this.currentSource.playbackRate.value = assignment.rate ?? 1.0;
     this.currentSource.connect(this.audioContext.destination);
 
     if (onEnd) {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { BrowserVoiceEngine, ElevenLabsVoiceEngine, createVoiceEngine } from "@/lib/voice-engine";
+import { BrowserVoiceEngine, GeminiVoiceEngine, createVoiceEngine } from "@/lib/voice-engine";
 import { detectAllEmotions, getEmotionVoiceAdjustment, EMOTION_COLORS } from "@/lib/ai/emotion-detector";
 import { generateDirectorNotes } from "@/lib/ai/director-notes";
 import { generatePerformanceNotes } from "@/lib/ai/performance-coach";
@@ -46,7 +46,7 @@ export default function RehearsePage() {
   const [isPaused, setIsPaused] = useState(false);
   const [waitingForUser, setWaitingForUser] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
-  const voiceEngineRef = useRef<BrowserVoiceEngine | ElevenLabsVoiceEngine | null>(null);
+  const voiceEngineRef = useRef<BrowserVoiceEngine | GeminiVoiceEngine | null>(null);
   const currentLineRef = useRef<HTMLDivElement>(null);
   const isPlayingRef = useRef(false);
   const isPausedRef = useRef(false);

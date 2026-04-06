@@ -10,8 +10,8 @@ const VALID_KEYS = [
   // Manifest Financial
   "manifest_api_url",
   "manifest_secret_key",
-  // ElevenLabs
-  "elevenlabs_api_key",
+  // Gemini Voices
+  "gemini_api_key",
   // GoHighLevel
   "gohighlevel_api_key",
   "gohighlevel_location_id",

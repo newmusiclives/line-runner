@@ -23,8 +23,8 @@ export async function POST(request: Request) {
     if (service === "manifest") {
       return NextResponse.json(await testManifest());
     }
-    if (service === "elevenlabs") {
-      return NextResponse.json(await testElevenLabs());
+    if (service === "gemini") {
+      return NextResponse.json(await testGemini());
     }
     if (service === "gohighlevel") {
       return NextResponse.json(await testGoHighLevel());
@@ -70,24 +70,23 @@ async function testManifest() {
   }
 }
 
-async function testElevenLabs() {
-  const apiKey = await getSetting("elevenlabs_api_key");
+async function testGemini() {
+  const apiKey = await getSetting("gemini_api_key");
   if (!apiKey) {
     return { ok: false, error: "API Key is required" };
   }
   try {
-    const res = await fetch("https://api.elevenlabs.io/v1/user", {
-      headers: { "xi-api-key": apiKey },
-      signal: AbortSignal.timeout(10000),
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+      { signal: AbortSignal.timeout(10000) }
+    );
     if (res.ok) {
-      const data = await res.json();
-      return {
-        ok: true,
-        message: `Connected — ${data.subscription?.character_limit?.toLocaleString() || "N/A"} character limit`,
-      };
+      return { ok: true, message: "Gemini API connected — TTS voices ready" };
     }
-    return { ok: false, error: `HTTP ${res.status}: Invalid API key` };
+    if (res.status === 400 || res.status === 403) {
+      return { ok: false, error: "Invalid API key" };
+    }
+    return { ok: false, error: `HTTP ${res.status}: ${res.statusText}` };
   } catch (err: any) {
     if (err.name === "TimeoutError") return { ok: false, error: "Connection timed out" };
     return { ok: false, error: err.message };

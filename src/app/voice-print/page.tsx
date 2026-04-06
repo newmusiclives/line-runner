@@ -256,7 +256,7 @@ export default function VoicePrintPage() {
     <div className="max-w-5xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-2">Voice Print Builder</h1>
       <p className="text-muted mb-6">
-        Record your professional voice asset for ElevenLabs Marketplace
+        Record your professional voice asset for AI Voice Marketplace
         submission.
         {saving && (
           <span className="ml-2 text-xs text-accent-light">Saving...</span>
@@ -381,7 +381,7 @@ export default function VoicePrintPage() {
                 </div>
                 {current.qualityScore >= 90 && (
                   <span className="text-xs text-success">
-                    Meets ElevenLabs standards
+                    Meets quality standards
                   </span>
                 )}
                 {current.durationSec !== undefined && (
@@ -466,7 +466,7 @@ export default function VoicePrintPage() {
                     All Segments Recorded!
                   </h3>
                   <p className="text-muted mb-4">
-                    Your voice print is ready for ElevenLabs Marketplace
+                    Your voice print is ready for AI Voice Marketplace
                     submission.
                   </p>
                   <button

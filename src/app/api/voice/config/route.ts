@@ -13,10 +13,10 @@ export async function GET() {
   const creditCheck = await checkVoiceCredits(session.user.id, 0.1);
 
   await ensureTable();
-  const apiKey = await getSetting("elevenlabs_api_key");
+  const apiKey = await getSetting("gemini_api_key");
 
   return NextResponse.json({
-    engine: apiKey ? "elevenlabs" : "browser",
+    engine: apiKey ? "gemini" : "browser",
     apiKey: apiKey || null,
     credits: {
       minutesRemaining: creditCheck.minutesRemaining,

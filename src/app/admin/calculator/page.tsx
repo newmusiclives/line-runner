@@ -46,7 +46,7 @@ export default function CalculatorPage() {
   const [blockSize, setBlockSize] = useState("30K");
 
   // Section 4: Fixed costs
-  const [elevenLabsCost, setElevenLabsCost] = useState(99);
+  const [geminiCost, setGeminiCost] = useState(99);
   const [netlifyCost, setNetlifyCost] = useState(0);
   const [neonCost, setNeonCost] = useState(0);
   const [domainMisc, setDomainMisc] = useState(15);
@@ -64,26 +64,26 @@ export default function CalculatorPage() {
     const blockRevenue = blocksPerMonth * selectedBlock.price;
     const totalRevenue = subRevenue + blockRevenue;
 
-    // ElevenLabs cost (usage-based)
+    // Gemini TTS cost (usage-based)
     const freeCreditUsage = freeUsers * 2_500 * 0.5;
     const proCreditUsage = proSubs * 40_000 * 0.6;
     const studioCreditUsage = studioSubs * 75_000 * 0.7;
     const blockCreditUsage = blocksPerMonth * selectedBlock.credits;
     const totalCreditsUsed = freeCreditUsage + proCreditUsage + studioCreditUsage + blockCreditUsage;
-    const elevenLabsUsageCost = (totalCreditsUsed / 1000) * COST_PER_1K_CREDITS;
+    const geminiUsageCost = (totalCreditsUsed / 1000) * COST_PER_1K_CREDITS;
 
     // Claude API cost
     const activeProStudio = proSubs + studioSubs;
     const tokensPerUser = 500 * 10; // 500 tokens per call, 10 calls/mo
     const claudeCost = activeProStudio * tokensPerUser * (0.25 / 1000);
 
-    const monthlyProfit = totalRevenue - elevenLabsUsageCost - claudeCost;
+    const monthlyProfit = totalRevenue - geminiUsageCost - claudeCost;
 
     return {
       subRevenue,
       blockRevenue,
       totalRevenue,
-      elevenLabsUsageCost,
+      geminiUsageCost,
       claudeCost,
       monthlyProfit,
       annualProfit: monthlyProfit * 12,
@@ -92,13 +92,13 @@ export default function CalculatorPage() {
 
   // ── Derived: Section 4 ──────────────────────────────────────────
   const breakEven = useMemo(() => {
-    const totalFixed = elevenLabsCost + netlifyCost + neonCost + projections.claudeCost + domainMisc;
+    const totalFixed = geminiCost + netlifyCost + neonCost + projections.claudeCost + domainMisc;
     const proMarginPerSub = 20 - 7.92; // $12.08
     const breakEvenSubs = Math.ceil(totalFixed / proMarginPerSub);
-    const netProfit = projections.totalRevenue - projections.elevenLabsUsageCost - projections.claudeCost - totalFixed;
+    const netProfit = projections.totalRevenue - projections.geminiUsageCost - projections.claudeCost - totalFixed;
 
     return { totalFixed, breakEvenSubs, netProfit };
-  }, [elevenLabsCost, netlifyCost, neonCost, domainMisc, projections]);
+  }, [geminiCost, netlifyCost, neonCost, domainMisc, projections]);
 
   // ── Derived: Section 5 ──────────────────────────────────────────
   const simulator = useMemo(() => {
@@ -159,7 +159,7 @@ export default function CalculatorPage() {
                     <span>{plan.minutes} min</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted">ElevenLabs cost</span>
+                    <span className="text-muted">Gemini TTS cost</span>
                     <span className="text-red-400">${fmt(plan.cost)}</span>
                   </div>
                   <div className="border-t border-border pt-2 flex justify-between font-medium">
@@ -250,7 +250,7 @@ export default function CalculatorPage() {
             <ResultRow label="Credit block revenue" value={`$${fmt(projections.blockRevenue)}`} />
             <ResultRow label="Total monthly revenue" value={`$${fmt(projections.totalRevenue)}`} bold accent />
             <div className="border-t border-border pt-3" />
-            <ResultRow label="ElevenLabs cost (usage)" value={`-$${fmt(projections.elevenLabsUsageCost)}`} red />
+            <ResultRow label="Gemini TTS cost (usage)" value={`-$${fmt(projections.geminiUsageCost)}`} red />
             <ResultRow label="Claude API cost (est.)" value={`-$${fmt(projections.claudeCost)}`} red />
             <div className="border-t border-border pt-3" />
             <ResultRow
@@ -275,7 +275,7 @@ export default function CalculatorPage() {
           {/* Fixed costs inputs */}
           <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
             <h3 className="font-medium text-muted uppercase text-xs tracking-wider">Fixed Costs</h3>
-            <InputRow label="ElevenLabs subscription" value={elevenLabsCost} onChange={setElevenLabsCost} prefix="$" />
+            <InputRow label="Gemini API subscription" value={geminiCost} onChange={setGeminiCost} prefix="$" />
             <InputRow label="Netlify hosting" value={netlifyCost} onChange={setNetlifyCost} prefix="$" />
             <InputRow label="Neon Postgres" value={neonCost} onChange={setNeonCost} prefix="$" />
             <div className="flex items-center justify-between">
@@ -297,7 +297,7 @@ export default function CalculatorPage() {
               <ResultRow label="Break-even subscribers (at Pro rate)" value={`${breakEven.breakEvenSubs} subscribers`} bold />
               <div className="border-t border-border pt-3" />
               <ResultRow label="Revenue (from projections)" value={`$${fmt(projections.totalRevenue)}`} />
-              <ResultRow label="Variable costs" value={`-$${fmt(projections.elevenLabsUsageCost + projections.claudeCost)}`} red />
+              <ResultRow label="Variable costs" value={`-$${fmt(projections.geminiUsageCost + projections.claudeCost)}`} red />
               <ResultRow label="Fixed costs" value={`-$${fmt(breakEven.totalFixed)}`} red />
               <div className="border-t border-border pt-3" />
               <div className="flex items-center justify-between">

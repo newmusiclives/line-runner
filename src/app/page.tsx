@@ -89,7 +89,7 @@ export default function HomePage() {
               { title: "Monologue Masterclass", desc: "Sell your best takes as teaching content to other actors", tag: "Income" },
               { title: "Line Runner PASS", desc: "Fan memberships — subscribers access your takes, coaching, and content", tag: "Income" },
               { title: "Scene Exchange", desc: "Rehearse with a real human partner through the app, any time zone", tag: "Platform" },
-              { title: "Voice Print Builder", desc: "Build your ElevenLabs Marketplace voice asset inside the app", tag: "Income" },
+              { title: "Voice Print Builder", desc: "Build your AI voice marketplace asset inside the app", tag: "Income" },
               { title: "Line Runner STUDIO", desc: "Full creative business dashboard — every income stream in one place", tag: "Income" },
               { title: "AI Performance Coach", desc: "3-5 specific, timestamped notes per take — never generic praise", tag: "AI" },
             ].map((f) => (

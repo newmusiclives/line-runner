@@ -32,8 +32,8 @@ const services: ServiceConfig[] = [
     testId: "manifest",
   },
   {
-    id: "elevenlabs",
-    name: "ElevenLabs",
+    id: "gemini",
+    name: "Gemini Voices (Google)",
     description: "AI voice synthesis for premium scene partner voices",
     color: "bg-violet-500",
     icon: (
@@ -44,9 +44,9 @@ const services: ServiceConfig[] = [
       />
     ),
     fields: [
-      { key: "elevenlabs_api_key", label: "API Key", type: "password", placeholder: "xi_..." },
+      { key: "gemini_api_key", label: "API Key", type: "password", placeholder: "AIza..." },
     ],
-    testId: "elevenlabs",
+    testId: "gemini",
   },
   {
     id: "gohighlevel",

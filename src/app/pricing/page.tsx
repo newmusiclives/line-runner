@@ -182,7 +182,7 @@ export default function PricingPage() {
               "VO Genre Training (105 scripts)",
               "Monologue Masterclass (sell & earn)",
               "PASS fan memberships (earn)",
-              "Voice Print Builder (ElevenLabs)",
+              "Voice Print Builder (Gemini)",
               "STUDIO Business Dashboard",
               "Credit blocks at best rates",
             ].map((f) => (
@@ -358,7 +358,7 @@ export default function PricingPage() {
             { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, and 40,000 credits with 10 AI voices. Studio nearly doubles your credits to 75,000 with 25 voices, and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
             { q: "What about stage schools and theatre companies?", a: "Enterprise plans include unlimited credits, multi-seat admin, student & faculty accounts, Director's Cut for teacher collaboration, custom curriculum, SSO, and annual invoicing. Contact enterprise@linerunner.app for a custom quote." },
             { q: "Can I cancel anytime?", a: "Yes. Pro and Studio are monthly subscriptions with no lock-in. Cancel anytime and keep access through the end of your billing period. Unused credit blocks carry over." },
-            { q: "How do income features work?", a: "Studio subscribers can sell Monologue Masterclasses (you keep 85%), set up PASS fan memberships ($3/$9/$19 tiers, you keep 85%), build ElevenLabs voice prints, and use the Client Delivery Portal (3% transaction fee). All earnings are visible in the STUDIO dashboard with monthly payouts." },
+            { q: "How do income features work?", a: "Studio subscribers can sell Monologue Masterclasses (you keep 85%), set up PASS fan memberships ($3/$9/$19 tiers, you keep 85%), build Gemini voice prints, and use the Client Delivery Portal (3% transaction fee). All earnings are visible in the STUDIO dashboard with monthly payouts." },
             { q: "Who processes payments?", a: "All payments are securely processed by Manifest Financial. We never store your card details." },
           ].map((faq) => (
             <details key={faq.q} className="group bg-surface border border-border rounded-xl">
