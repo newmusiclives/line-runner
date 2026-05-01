@@ -186,19 +186,14 @@ async function actionFields(apiKey: string, locationId: string) {
 
 async function actionSnapshot(apiKey: string, locationId: string) {
   const [tplRes, fieldsRes, contactsRes] = await Promise.all([
-    // GHL list templates lives at the same /emails/builder path as create, with GET
-    ghlRequest<{
-      templates?: Array<{ name: string; id?: string }>;
-      data?: Array<{ name: string; id?: string }>;
-    }>(
+    ghlRequest<unknown>(
       apiKey,
-      `/emails/builder?locationId=${locationId}&limit=50`
+      `/emails/builder?locationId=${locationId}&limit=100&templatesOnly=true`
     ),
     ghlRequest<{ customFields?: Array<{ name?: string }> }>(
       apiKey,
       `/locations/${locationId}/customFields?model=contact`
     ),
-    // GHL contacts search (POST) is the supported v2 way; supports filters and tags
     ghlRequest<{
       contacts?: Array<{ id: string; email?: string; tags?: string[] }>;
       total?: number;
@@ -208,9 +203,15 @@ async function actionSnapshot(apiKey: string, locationId: string) {
     }),
   ]);
 
-  // Templates may come back under .templates or .data depending on API version
-  const templates =
-    tplRes.data?.templates || tplRes.data?.data || [];
+  // GHL's response shape for /emails/builder is inconsistent — try several
+  // common keys and fall back to any array of objects in the payload.
+  const templates = extractArray<{ name?: string; title?: string; id?: string }>(
+    tplRes.data,
+    ["templates", "data", "records", "result", "results"]
+  ).map((t) => ({
+    name: t.name || t.title || "(unnamed)",
+    id: t.id,
+  }));
 
   return {
     ok: true,
@@ -222,6 +223,23 @@ async function actionSnapshot(apiKey: string, locationId: string) {
     contactsTotal: contactsRes.data?.total ?? (contactsRes.data?.contacts?.length ?? 0),
     contactsError: contactsRes.ok ? null : contactsRes.error,
   };
+}
+
+function extractArray<T = Record<string, unknown>>(payload: unknown, preferredKeys: string[]): T[] {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload as T[];
+  if (typeof payload !== "object") return [];
+  const obj = payload as Record<string, unknown>;
+  for (const key of preferredKeys) {
+    if (Array.isArray(obj[key])) return obj[key] as T[];
+  }
+  // Fallback: find any property that's a non-empty array of objects
+  for (const value of Object.values(obj)) {
+    if (Array.isArray(value) && value.length > 0 && typeof value[0] === "object") {
+      return value as T[];
+    }
+  }
+  return [];
 }
 
 // ── Route handler ──────────────────────────────────────────────────

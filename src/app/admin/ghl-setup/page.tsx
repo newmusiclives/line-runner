@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EMAIL_TEMPLATES } from "@/lib/email-templates";
+
+const STATE_KEY = "lr-ghl-setup-state-v1";
 
 interface VerifyResult {
   ok: boolean;
@@ -37,6 +39,44 @@ export default function GhlSetupPage() {
   const [fields, setFields] = useState<ActionState>({ kind: "idle" });
   const [snapshot, setSnapshot] = useState<ActionState>({ kind: "idle" });
 
+  // Hydrate prior run results from localStorage so reloads don't reset progress
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STATE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Record<string, unknown>;
+      if (saved.verify) setVerify({ kind: "ok", data: saved.verify });
+      if (saved.templates) setTemplates({ kind: "ok", data: saved.templates });
+      if (saved.fields) setFields({ kind: "ok", data: saved.fields });
+      if (saved.snapshot) setSnapshot({ kind: "ok", data: saved.snapshot });
+    } catch {
+      // ignore corrupt storage
+    }
+  }, []);
+
+  const persist = (action: string, data: unknown) => {
+    try {
+      const raw = localStorage.getItem(STATE_KEY);
+      const current = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+      current[action] = data;
+      localStorage.setItem(STATE_KEY, JSON.stringify(current));
+    } catch {
+      // ignore quota / parse errors
+    }
+  };
+
+  const clearPersisted = () => {
+    try {
+      localStorage.removeItem(STATE_KEY);
+    } catch {
+      // ignore
+    }
+    setVerify({ kind: "idle" });
+    setTemplates({ kind: "idle" });
+    setFields({ kind: "idle" });
+    setSnapshot({ kind: "idle" });
+  };
+
   const run = async (
     action: string,
     setter: (s: ActionState) => void
@@ -58,6 +98,7 @@ export default function GhlSetupPage() {
         return;
       }
       setter({ kind: "ok", data });
+      persist(action, data);
     } catch (err) {
       setter({
         kind: "error",
@@ -68,12 +109,21 @@ export default function GhlSetupPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">GHL Setup</h1>
-        <p className="text-muted mt-1">
-          One-click scaffolding for the GoHighLevel side of the integration. Uses the API key
-          saved in <span className="text-foreground">Admin → Integrations → GoHighLevel</span>.
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold">GHL Setup</h1>
+          <p className="text-muted mt-1">
+            One-click scaffolding for the GoHighLevel side of the integration. Uses the API key
+            saved in <span className="text-foreground">Admin → Integrations → GoHighLevel</span>.
+          </p>
+        </div>
+        <button
+          onClick={clearPersisted}
+          className="px-3 py-1.5 text-xs text-muted hover:text-foreground border border-border rounded-lg hover:bg-surface-light transition-colors shrink-0"
+          title="Forget previous run results stored in this browser"
+        >
+          Clear history
+        </button>
       </div>
 
       <div className="space-y-6">
