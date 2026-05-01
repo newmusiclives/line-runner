@@ -120,10 +120,13 @@ export default async function RootLayout({
                 </span>
                 .
               </div>
-              <div className="flex gap-6 text-sm text-muted">
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
                 <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
                 <Link href="/vo-tools" className="hover:text-foreground transition-colors">VO Tools</Link>
                 <Link href="/marketplace" className="hover:text-foreground transition-colors">Marketplace</Link>
+                <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+                <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+                <Link href="/refund" className="hover:text-foreground transition-colors">Refunds</Link>
                 <Link href="/auth/login" className="hover:text-foreground transition-colors">Sign In</Link>
               </div>
             </div>
