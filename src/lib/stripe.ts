@@ -13,10 +13,12 @@ export async function getStripeMode(): Promise<StripeMode> {
   }
 }
 
-// Resolves a Stripe config value, in order:
+// Resolves a Stripe config value with mode-specific values winning over
+// legacy single-key fallbacks (so the admin toggle is authoritative even
+// when old single-key env vars are still set on Netlify):
 // 1. Mode-specific env var (STRIPE_TEST_SECRET_KEY / STRIPE_LIVE_SECRET_KEY)
-// 2. Legacy single env var (STRIPE_SECRET_KEY) — applied to whichever mode is active
-// 3. Mode-specific DB key (stripe_test_secret_key / stripe_live_secret_key)
+// 2. Mode-specific DB key (stripe_test_secret_key / stripe_live_secret_key)
+// 3. Legacy single env var (STRIPE_SECRET_KEY)
 // 4. Legacy single DB key (stripe_secret_key)
 async function resolveModedKey(opts: {
   modeEnvVars: { test: string; live: string };
@@ -29,13 +31,18 @@ async function resolveModedKey(opts: {
   const envForMode = process.env[opts.modeEnvVars[mode]];
   if (envForMode) return envForMode;
 
+  try {
+    await ensureTable();
+    const dbForMode = await getSetting(opts.modeDbKeys[mode]);
+    if (dbForMode) return dbForMode;
+  } catch {
+    // DB unreachable — fall through to legacy
+  }
+
   const legacyEnv = process.env[opts.legacyEnvVar];
   if (legacyEnv) return legacyEnv;
 
   try {
-    await ensureTable();
-    const fromMode = await getSetting(opts.modeDbKeys[mode]);
-    if (fromMode) return fromMode;
     return (await getSetting(opts.legacyDbKey)) || null;
   } catch {
     return null;
