@@ -13,26 +13,8 @@ interface ServiceConfig {
 }
 
 const services: ServiceConfig[] = [
-  {
-    id: "stripe",
-    name: "Stripe",
-    description: "Payment processing — subscriptions, checkout, and webhooks. Recommended: set these in Netlify environment variables; this panel is a fallback.",
-    color: "bg-indigo-500",
-    icon: (
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"
-      />
-    ),
-    fields: [
-      { key: "stripe_secret_key", label: "Secret Key", type: "password", placeholder: "sk_test_... or sk_live_..." },
-      { key: "stripe_webhook_secret", label: "Webhook Signing Secret", type: "password", placeholder: "whsec_..." },
-      { key: "stripe_price_pro", label: "Pro Price ID ($20/mo)", type: "text", placeholder: "price_..." },
-      { key: "stripe_price_studio", label: "Studio Price ID ($70/mo)", type: "text", placeholder: "price_..." },
-    ],
-    testId: "stripe",
-  },
+  // Stripe is rendered by a dedicated <StripePanel /> above the generic
+  // services list because it has dual test/live key sets and a mode toggle.
   {
     id: "gemini",
     name: "Gemini Voices (Google)",
@@ -294,6 +276,8 @@ export default function AdminIntegrationsPage() {
         </p>
       </div>
 
+      <StripePanel onSaved={fetchSettings} showToast={showToast} />
+
       <div className="space-y-6">
         {services.map((service) => {
           const result = testResults[service.id];
@@ -460,6 +444,316 @@ export default function AdminIntegrationsPage() {
           <span className="text-base">{toast.message}</span>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Stripe panel ────────────────────────────────────────────────
+// Dual test/live key sets with a one-click mode toggle. Stored in
+// integration_settings so flipping is instant — no redeploy.
+
+type StripeMode = "test" | "live";
+
+const STRIPE_FIELDS = {
+  test: {
+    secretKey: "stripe_test_secret_key",
+    webhookSecret: "stripe_test_webhook_secret",
+    pricePro: "stripe_test_price_pro",
+    priceStudio: "stripe_test_price_studio",
+  },
+  live: {
+    secretKey: "stripe_live_secret_key",
+    webhookSecret: "stripe_live_webhook_secret",
+    pricePro: "stripe_live_price_pro",
+    priceStudio: "stripe_live_price_studio",
+  },
+} as const;
+
+function StripePanel({
+  showToast,
+}: {
+  onSaved: () => void;
+  showToast: (message: string, type: "success" | "error") => void;
+}) {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [mode, setMode] = useState<StripeMode>("test");
+  const [savedMode, setSavedMode] = useState<StripeMode>("test");
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [savedValues, setSavedValues] = useState<Record<string, string>>({});
+  const [hasValueMap, setHasValueMap] = useState<Record<string, boolean>>({});
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/integrations");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        const next: Record<string, string> = {};
+        const has: Record<string, boolean> = {};
+        let m: StripeMode = "test";
+        for (const item of data) {
+          if (item.key === "stripe_mode") {
+            m = item.value === "live" ? "live" : "test";
+          } else if (item.key.startsWith("stripe_")) {
+            next[item.key] = item.value || "";
+            has[item.key] = item.hasValue;
+          }
+        }
+        setMode(m);
+        setSavedMode(m);
+        setValues(next);
+        setSavedValues(next);
+        setHasValueMap(has);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setField = (key: string, val: string) => {
+    setValues((prev) => ({ ...prev, [key]: val }));
+  };
+
+  const dirtyFields: { key: string; value: string }[] = Object.entries(STRIPE_FIELDS)
+    .flatMap(([, fields]) => Object.values(fields))
+    .filter((key) => (values[key] || "") !== (savedValues[key] || ""))
+    .map((key) => ({ key, value: values[key] || "" }));
+  const modeDirty = mode !== savedMode;
+  const hasChanges = dirtyFields.length > 0 || modeDirty;
+
+  const persist = async (key: string, value: string) => {
+    const res = await fetch("/api/admin/integrations", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, value }),
+    });
+    return res.ok;
+  };
+
+  const onSave = async () => {
+    setSaving(true);
+    let failed = 0;
+    for (const f of dirtyFields) {
+      const ok = await persist(f.key, f.value);
+      if (!ok) failed++;
+    }
+    if (modeDirty) {
+      const ok = await persist("stripe_mode", mode);
+      if (!ok) failed++;
+    }
+    if (failed === 0) {
+      setSavedValues({ ...values });
+      setSavedMode(mode);
+      const has = { ...hasValueMap };
+      for (const f of dirtyFields) has[f.key] = !!f.value;
+      setHasValueMap(has);
+      showToast("Stripe configuration saved", "success");
+    } else {
+      showToast(`Failed to save ${failed} field${failed === 1 ? "" : "s"}`, "error");
+    }
+    setSaving(false);
+  };
+
+  const onSwitchMode = async (newMode: StripeMode) => {
+    setMode(newMode);
+    // Save immediately so the toggle is one-click
+    const ok = await persist("stripe_mode", newMode);
+    if (ok) {
+      setSavedMode(newMode);
+      showToast(`Switched to ${newMode === "live" ? "Live" : "Test"} mode`, "success");
+    } else {
+      setMode(savedMode);
+      showToast("Failed to switch mode", "error");
+    }
+  };
+
+  const onTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/admin/integrations/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ service: "stripe" }),
+      });
+      const data = await res.json();
+      setTestResult(data);
+    } catch {
+      setTestResult({ ok: false, error: "Request failed" });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const fieldsForMode = (m: StripeMode) => {
+    const f = STRIPE_FIELDS[m];
+    const allFilled =
+      hasValueMap[f.secretKey] &&
+      hasValueMap[f.webhookSecret] &&
+      hasValueMap[f.pricePro] &&
+      hasValueMap[f.priceStudio];
+    return { f, allFilled };
+  };
+
+  const testStatus = fieldsForMode("test");
+  const liveStatus = fieldsForMode("live");
+
+  if (loading) {
+    return (
+      <div className="bg-surface border border-border rounded-2xl p-6 mb-6">
+        <div className="h-6 w-24 bg-surface-light rounded animate-pulse" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-surface border border-border rounded-2xl overflow-hidden mb-6">
+      <div className="p-5 border-b border-border flex items-center gap-4">
+        <div className="bg-indigo-500 w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="font-semibold text-lg">Stripe</h2>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                mode === "live" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"
+              }`}
+            >
+              {mode === "live" ? "LIVE mode" : "TEST mode"}
+            </span>
+          </div>
+          <p className="text-sm text-muted">
+            Save both test and live keys, then flip the toggle to switch — no redeploy needed.
+          </p>
+        </div>
+      </div>
+
+      {/* Mode toggle */}
+      <div className="p-5 border-b border-border bg-background/30">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="text-sm font-semibold mb-1">Active mode</div>
+            <p className="text-xs text-muted">
+              Determines which key set the app uses for checkout, webhooks, and price lookups.
+            </p>
+          </div>
+          <div className="inline-flex rounded-lg border border-border bg-surface p-1">
+            {(["test", "live"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => m !== mode && onSwitchMode(m)}
+                disabled={saving}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  mode === m
+                    ? m === "live"
+                      ? "bg-success text-white"
+                      : "bg-warning text-white"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                {m === "live" ? "LIVE" : "TEST"}
+              </button>
+            ))}
+          </div>
+        </div>
+        {mode === "live" && (
+          <p className="mt-3 text-xs text-warning bg-warning/10 border border-warning/20 rounded-lg px-3 py-2">
+            ⚠ Live mode is active. Real cards will be charged on subscription checkout.
+          </p>
+        )}
+      </div>
+
+      {/* Two columns of keys */}
+      <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+        {(["test", "live"] as const).map((m) => {
+          const f = STRIPE_FIELDS[m];
+          const status = m === "test" ? testStatus : liveStatus;
+          return (
+            <div key={m} className="p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-sm uppercase tracking-wide">
+                  {m === "live" ? "Live keys" : "Test keys"}
+                </h3>
+                {status.allFilled ? (
+                  <span className="text-[10px] bg-success/15 text-success px-1.5 py-0.5 rounded font-semibold uppercase">
+                    Complete
+                  </span>
+                ) : (
+                  <span className="text-[10px] bg-surface-light text-muted px-1.5 py-0.5 rounded font-semibold uppercase">
+                    Missing fields
+                  </span>
+                )}
+              </div>
+
+              {[
+                { key: f.secretKey, label: "Secret Key", type: "password", placeholder: m === "live" ? "sk_live_..." : "sk_test_..." },
+                { key: f.webhookSecret, label: "Webhook Signing Secret", type: "password", placeholder: "whsec_..." },
+                { key: f.pricePro, label: "Pro Price ID ($20/mo)", type: "text", placeholder: "price_..." },
+                { key: f.priceStudio, label: "Studio Price ID ($70/mo)", type: "text", placeholder: "price_..." },
+              ].map((field) => (
+                <div key={field.key}>
+                  <label className="block text-sm font-medium mb-1.5">{field.label}</label>
+                  <input
+                    type={field.type}
+                    value={values[field.key] || ""}
+                    onChange={(e) => setField(field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent placeholder:text-muted/50 font-mono"
+                  />
+                  <div className="text-xs text-muted mt-1 font-mono">{field.key}</div>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {testResult && (
+        <div
+          className={`mx-5 mb-5 flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg ${
+            testResult.ok
+              ? "bg-success/10 text-success border border-success/20"
+              : "bg-danger/10 text-danger border border-danger/20"
+          }`}
+        >
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            {testResult.ok ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            )}
+          </svg>
+          {testResult.ok ? testResult.message : testResult.error}
+        </div>
+      )}
+
+      <div className="px-5 pb-5 flex items-center gap-3">
+        <button
+          onClick={onSave}
+          disabled={saving || !hasChanges}
+          className="px-5 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+        <button
+          onClick={onTest}
+          disabled={testing}
+          className="px-5 py-2 bg-surface-light text-foreground rounded-lg text-sm font-medium hover:bg-border transition-colors disabled:opacity-40"
+        >
+          {testing ? "Testing..." : `Test ${mode === "live" ? "Live" : "Test"} Mode`}
+        </button>
+      </div>
     </div>
   );
 }

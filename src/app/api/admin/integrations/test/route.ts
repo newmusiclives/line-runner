@@ -51,11 +51,20 @@ export async function POST(request: Request) {
 }
 
 async function testStripe() {
-  // Prefer env vars (production source of truth); fall back to DB
+  // Resolve via the same mode-aware logic the runtime uses
+  const mode = (await getSetting("stripe_mode")) === "live" ? "live" : "test";
+  const modeKey = mode === "live" ? "stripe_live_secret_key" : "stripe_test_secret_key";
   const secretKey =
-    process.env.STRIPE_SECRET_KEY || (await getSetting("stripe_secret_key"));
+    (mode === "live" ? process.env.STRIPE_LIVE_SECRET_KEY : process.env.STRIPE_TEST_SECRET_KEY) ||
+    process.env.STRIPE_SECRET_KEY ||
+    (await getSetting(modeKey)) ||
+    (await getSetting("stripe_secret_key"));
+
   if (!secretKey) {
-    return { ok: false, error: "Secret Key is required (set STRIPE_SECRET_KEY env var or save here)" };
+    return {
+      ok: false,
+      error: `${mode === "live" ? "Live" : "Test"} secret key not configured. Save it in the panel above.`,
+    };
   }
   try {
     const res = await fetch("https://api.stripe.com/v1/account", {
@@ -65,10 +74,13 @@ async function testStripe() {
     });
     if (res.ok) {
       const account = await res.json();
-      const mode = secretKey.startsWith("sk_live_") ? "live" : "test";
+      const keyMode = secretKey.startsWith("sk_live_") ? "live" : "test";
+      const mismatch = keyMode !== mode
+        ? ` ⚠ key is ${keyMode} but active mode is ${mode}`
+        : "";
       return {
         ok: true,
-        message: `Stripe connected — ${account.business_profile?.name || account.id} (${mode} mode)`,
+        message: `Stripe connected — ${account.business_profile?.name || account.id} (${keyMode} mode)${mismatch}`,
       };
     }
     if (res.status === 401) {

@@ -10,11 +10,21 @@ const VALID_KEYS = [
   // Manifest Financial (deprecated — kept for back-compat with old saved values)
   "manifest_api_url",
   "manifest_secret_key",
-  // Stripe
+  // Stripe — legacy single-key fields (kept for back-compat)
   "stripe_secret_key",
   "stripe_webhook_secret",
   "stripe_price_pro",
   "stripe_price_studio",
+  // Stripe — mode-aware
+  "stripe_mode",
+  "stripe_test_secret_key",
+  "stripe_test_webhook_secret",
+  "stripe_test_price_pro",
+  "stripe_test_price_studio",
+  "stripe_live_secret_key",
+  "stripe_live_webhook_secret",
+  "stripe_live_price_pro",
+  "stripe_live_price_studio",
   // Gemini Voices
   "gemini_api_key",
   // GoHighLevel
