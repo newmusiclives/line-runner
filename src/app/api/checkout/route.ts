@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: session.user.email,
       client_reference_id: session.user.id,
-      success_url: `${appUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${appUrl}/checkout/success?plan=${plan.id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/pricing?checkout=cancelled`,
       allow_promotion_codes: true,
       subscription_data: {
