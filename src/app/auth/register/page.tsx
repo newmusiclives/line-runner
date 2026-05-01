@@ -46,7 +46,7 @@ export default function RegisterPage() {
       if (res?.error) {
         setError("An account with this email may already exist.");
       } else {
-        router.push("/dashboard");
+        router.push("/welcome");
         router.refresh();
       }
     } catch {
