@@ -269,29 +269,7 @@ export default function PricingPage() {
               </tr>
             </thead>
             <tbody>
-              {[
-                { feature: "Monthly credits", free: "2,500", pro: "40,000", studio: "75,000", enterprise: "Unlimited" },
-                { feature: "Credit blocks", free: "—", pro: "From $8", studio: "From $8", enterprise: "Volume" },
-                { feature: "Scene runs", free: "1/month", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
-                { feature: "AI voices per script", free: "3", pro: "10", studio: "25", enterprise: "25+" },
-                { feature: "Rehearsal modes", free: "Standard", pro: "All 10", studio: "All 10", enterprise: "All 10" },
-                { feature: "Script analysis", free: true, pro: true, studio: true, enterprise: true },
-                { feature: "Line Memory Tracker", free: true, pro: true, studio: true, enterprise: true },
-                { feature: "Bookmarks", free: true, pro: true, studio: true, enterprise: true },
-                { feature: "Teleprompter", free: true, pro: true, studio: true, enterprise: true },
-                { feature: "AI Performance Coach", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "Subtext, Wildcard, Cold Read", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "Annotations (8 types + voice)", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "Self-Tape Studio + 1080p export", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "Audition Vault", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "Scene Exchange", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "Emotional Arc + Dynamics", free: false, pro: true, studio: true, enterprise: true },
-                { feature: "VO Professional Suite (10 tools)", free: false, pro: false, studio: true, enterprise: true },
-                { feature: "Income tools (Masterclass, PASS)", free: false, pro: false, studio: true, enterprise: true },
-                { feature: "STUDIO Dashboard", free: false, pro: false, studio: true, enterprise: true },
-                { feature: "Voice Print Builder", free: false, pro: false, studio: true, enterprise: true },
-                { feature: "Multi-seat admin + SSO", free: false, pro: false, studio: false, enterprise: true },
-              ].map((row) => (
+              {(COMPARISON_ROWS).map((row) => (
                 <tr key={row.feature} className="border-b border-border/50">
                   <td className="py-3 px-4">{row.feature}</td>
                   {(["free", "pro", "studio", "enterprise"] as const).map((tier) => {
@@ -299,9 +277,21 @@ export default function PricingPage() {
                     return (
                       <td key={tier} className="py-3 px-4 text-center">
                         {typeof val === "boolean" ? (
-                          val ? <svg className="w-5 h-5 text-success mx-auto" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> : <span className="text-muted">—</span>
+                          val ? (
+                            <svg className="w-5 h-5 text-success mx-auto" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                          ) : (
+                            <span className="text-muted">—</span>
+                          )
+                        ) : typeof val === "object" && val !== null && "soon" in val ? (
+                          <span className="inline-block bg-warning/15 text-warning text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded">
+                            Soon
+                          </span>
                         ) : (
-                          <span className={tier === "pro" ? "font-medium text-accent-light" : tier === "enterprise" ? "font-medium text-warning" : "text-muted"}>{val}</span>
+                          <span className={tier === "pro" ? "font-medium text-accent-light" : tier === "enterprise" ? "font-medium text-warning" : "text-muted"}>
+                            {val as string}
+                          </span>
                         )}
                       </td>
                     );
@@ -361,6 +351,33 @@ export default function PricingPage() {
     </div>
   );
 }
+
+const SOON = { soon: true } as const;
+type Cell = boolean | string | typeof SOON;
+
+const COMPARISON_ROWS: { feature: string; free: Cell; pro: Cell; studio: Cell; enterprise: Cell }[] = [
+  { feature: "Monthly credits", free: "2,500", pro: "40,000", studio: "75,000", enterprise: "Unlimited" },
+  { feature: "Credit blocks", free: "—", pro: SOON, studio: SOON, enterprise: SOON },
+  { feature: "Scene runs", free: "1/month", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
+  { feature: "AI voices per script", free: "3", pro: "10", studio: "25", enterprise: "25+" },
+  { feature: "Rehearsal modes", free: "Standard", pro: SOON, studio: SOON, enterprise: SOON },
+  { feature: "Script analysis", free: true, pro: true, studio: true, enterprise: true },
+  { feature: "Line Memory Tracker", free: true, pro: true, studio: true, enterprise: true },
+  { feature: "Bookmarks", free: true, pro: true, studio: true, enterprise: true },
+  { feature: "Teleprompter", free: true, pro: true, studio: true, enterprise: true },
+  { feature: "AI Performance Coach", free: false, pro: SOON, studio: SOON, enterprise: SOON },
+  { feature: "Subtext, Wildcard, Cold Read", free: false, pro: SOON, studio: SOON, enterprise: SOON },
+  { feature: "Annotations (8 types + voice)", free: false, pro: SOON, studio: SOON, enterprise: SOON },
+  { feature: "Self-Tape Studio + 1080p export", free: false, pro: SOON, studio: SOON, enterprise: SOON },
+  { feature: "Audition Vault", free: false, pro: SOON, studio: SOON, enterprise: SOON },
+  { feature: "Scene Exchange", free: false, pro: SOON, studio: SOON, enterprise: SOON },
+  { feature: "Emotional Arc + Dynamics", free: false, pro: SOON, studio: SOON, enterprise: SOON },
+  { feature: "VO Professional Suite (10 tools)", free: false, pro: false, studio: SOON, enterprise: SOON },
+  { feature: "Income tools (Masterclass, PASS)", free: false, pro: false, studio: SOON, enterprise: SOON },
+  { feature: "STUDIO Dashboard", free: false, pro: false, studio: SOON, enterprise: SOON },
+  { feature: "Voice Print Builder", free: false, pro: false, studio: SOON, enterprise: SOON },
+  { feature: "Multi-seat admin + SSO", free: false, pro: false, studio: false, enterprise: SOON },
+];
 
 function FeatureLi({ text, soon }: { text: string; soon?: boolean }) {
   return (
