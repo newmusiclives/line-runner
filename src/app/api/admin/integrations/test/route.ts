@@ -20,8 +20,8 @@ export async function POST(request: Request) {
   const { service } = (await request.json()) as { service: string };
 
   try {
-    if (service === "manifest") {
-      return NextResponse.json(await testManifest());
+    if (service === "stripe") {
+      return NextResponse.json(await testStripe());
     }
     if (service === "gemini") {
       return NextResponse.json(await testGemini());
@@ -50,19 +50,30 @@ export async function POST(request: Request) {
   }
 }
 
-async function testManifest() {
-  const apiUrl = await getSetting("manifest_api_url");
-  const secretKey = await getSetting("manifest_secret_key");
-  if (!apiUrl || !secretKey) {
-    return { ok: false, error: "API URL and Secret Key are required" };
+async function testStripe() {
+  // Prefer env vars (production source of truth); fall back to DB
+  const secretKey =
+    process.env.STRIPE_SECRET_KEY || (await getSetting("stripe_secret_key"));
+  if (!secretKey) {
+    return { ok: false, error: "Secret Key is required (set STRIPE_SECRET_KEY env var or save here)" };
   }
   try {
-    const res = await fetch(`${apiUrl}/ping`, {
+    const res = await fetch("https://api.stripe.com/v1/account", {
       method: "GET",
       headers: { Authorization: `Bearer ${secretKey}` },
       signal: AbortSignal.timeout(10000),
     });
-    if (res.ok) return { ok: true, message: "Manifest Financial connected" };
+    if (res.ok) {
+      const account = await res.json();
+      const mode = secretKey.startsWith("sk_live_") ? "live" : "test";
+      return {
+        ok: true,
+        message: `Stripe connected — ${account.business_profile?.name || account.id} (${mode} mode)`,
+      };
+    }
+    if (res.status === 401) {
+      return { ok: false, error: "Invalid secret key" };
+    }
     return { ok: false, error: `HTTP ${res.status}: ${res.statusText}` };
   } catch (err: any) {
     if (err.name === "TimeoutError") return { ok: false, error: "Connection timed out" };

@@ -7,9 +7,14 @@ export interface IntegrationSetting {
 }
 
 const VALID_KEYS = [
-  // Manifest Financial
+  // Manifest Financial (deprecated — kept for back-compat with old saved values)
   "manifest_api_url",
   "manifest_secret_key",
+  // Stripe
+  "stripe_secret_key",
+  "stripe_webhook_secret",
+  "stripe_price_pro",
+  "stripe_price_studio",
   // Gemini Voices
   "gemini_api_key",
   // GoHighLevel

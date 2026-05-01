@@ -2,91 +2,44 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { PricingPlan } from "@/types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { PRICING_PLANS, CREDIT_BLOCKS } from "@/lib/manifest-financial";
 
 export default function PricingPage() {
-  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { status: authStatus } = useSession();
+  const [redirecting, setRedirecting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const cancelled = searchParams.get("checkout") === "cancelled";
 
-  const handleCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPlan) return;
-    setProcessing(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setProcessing(false);
-    setSuccess(true);
+  const startCheckout = async (planId: string) => {
+    if (authStatus === "unauthenticated") {
+      router.push(`/auth/login?callbackUrl=${encodeURIComponent(`/pricing`)}`);
+      return;
+    }
+    setError(null);
+    setRedirecting(planId);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Could not start checkout");
+        setRedirecting(null);
+        return;
+      }
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start checkout");
+      setRedirecting(null);
+    }
   };
-
-  if (success) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-24 text-center">
-        <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-        </div>
-        <h1 className="text-3xl font-bold mb-4">You&apos;re all set!</h1>
-        <p className="text-muted mb-2">Payment processed by <span className="text-foreground font-medium">Manifest Financial</span></p>
-        <p className="text-muted mb-8">Your <strong>{selectedPlan?.name}</strong> plan is now active.</p>
-        <Link href="/upload" className="inline-block bg-accent hover:bg-accent-dark text-white font-semibold px-8 py-3 rounded-xl transition-colors">Start Rehearsing</Link>
-      </div>
-    );
-  }
-
-  if (showCheckout && selectedPlan) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-12">
-        <button onClick={() => { setShowCheckout(false); setSelectedPlan(null); }} className="text-sm text-muted hover:text-foreground mb-6 flex items-center gap-1">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-          Back to plans
-        </button>
-        <div className="bg-surface border border-border rounded-2xl p-8">
-          <h1 className="text-2xl font-bold mb-4 text-center">Checkout</h1>
-          <div className="bg-surface-light rounded-xl p-4 space-y-2 text-sm mb-8">
-            <div className="flex justify-between"><span className="text-muted">Plan</span><span className="font-medium">{selectedPlan.name}</span></div>
-            <div className="flex justify-between"><span className="text-muted">Credits</span><span>{selectedPlan.costBreakdown.includedMinutes * 1000}/month</span></div>
-            <div className="border-t border-border pt-2 flex justify-between font-semibold">
-              <span>Total</span><span>${selectedPlan.price}/month</span>
-            </div>
-          </div>
-          <form onSubmit={handleCheckout} className="space-y-4">
-            <div>
-              <label className="text-sm text-muted block mb-1.5">Full Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Jane Smith" className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-muted/50" />
-            </div>
-            <div>
-              <label className="text-sm text-muted block mb-1.5">Email Address</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="jane@example.com" className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-muted/50" />
-            </div>
-            <div>
-              <label className="text-sm text-muted block mb-1.5">Card Number</label>
-              <input type="text" placeholder="4242 4242 4242 4242" required className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-muted/50 font-mono" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-muted block mb-1.5">Expiry</label>
-                <input type="text" placeholder="MM / YY" required className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-muted/50 font-mono" />
-              </div>
-              <div>
-                <label className="text-sm text-muted block mb-1.5">CVC</label>
-                <input type="text" placeholder="123" required className="w-full bg-surface-light border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-muted/50 font-mono" />
-              </div>
-            </div>
-            <button type="submit" disabled={processing} className="w-full bg-accent hover:bg-accent-dark disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition-all mt-4 flex items-center justify-center gap-2">
-              {processing ? (<><svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Processing...</>) : (<>Subscribe — ${selectedPlan.price}/month</>)}
-            </button>
-            <div className="flex items-center justify-center gap-2 text-xs text-muted mt-4">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-              Secured by Manifest Financial
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-16">
@@ -97,6 +50,21 @@ export default function PricingPage() {
         </p>
         <p className="text-muted text-lg">Start free. Upgrade when you&apos;re ready. Cancel anytime.</p>
       </div>
+
+      {(cancelled || error) && (
+        <div className="max-w-xl mx-auto mb-8">
+          {cancelled && !error && (
+            <div className="rounded-xl border border-warning/30 bg-warning/10 text-warning px-4 py-3 text-sm">
+              Checkout was cancelled. You can pick a plan and try again whenever you&apos;re ready.
+            </div>
+          )}
+          {error && (
+            <div className="rounded-xl border border-danger/30 bg-danger/10 text-danger px-4 py-3 text-sm">
+              {error}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Plans Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto mb-16">
@@ -156,7 +124,13 @@ export default function PricingPage() {
               </li>
             ))}
           </ul>
-          <button onClick={() => { setSelectedPlan(PRICING_PLANS[1]); setShowCheckout(true); }} className="w-full py-3 rounded-xl font-semibold transition-all bg-accent hover:bg-accent-dark text-white shadow-lg shadow-accent/25">Start Free Trial</button>
+          <button
+            onClick={() => startCheckout(PRICING_PLANS[1].id)}
+            disabled={redirecting !== null}
+            className="w-full py-3 rounded-xl font-semibold transition-all bg-accent hover:bg-accent-dark disabled:opacity-60 text-white shadow-lg shadow-accent/25"
+          >
+            {redirecting === PRICING_PLANS[1].id ? "Redirecting…" : "Subscribe — $20/month"}
+          </button>
         </div>
 
         {/* Studio */}
@@ -192,7 +166,13 @@ export default function PricingPage() {
               </li>
             ))}
           </ul>
-          <button onClick={() => { setSelectedPlan(PRICING_PLANS[2]); setShowCheckout(true); }} className="w-full py-3 rounded-xl font-semibold transition-all bg-surface-light hover:bg-border text-foreground">Get Studio</button>
+          <button
+            onClick={() => startCheckout(PRICING_PLANS[2].id)}
+            disabled={redirecting !== null}
+            className="w-full py-3 rounded-xl font-semibold transition-all bg-surface-light hover:bg-border disabled:opacity-60 text-foreground"
+          >
+            {redirecting === PRICING_PLANS[2].id ? "Redirecting…" : "Get Studio — $70/month"}
+          </button>
         </div>
 
         {/* Enterprise */}
@@ -359,7 +339,7 @@ export default function PricingPage() {
             { q: "What about stage schools and theatre companies?", a: "Enterprise plans include unlimited credits, multi-seat admin, student & faculty accounts, Director's Cut for teacher collaboration, custom curriculum, SSO, and annual invoicing. Contact enterprise@linerunner.app for a custom quote." },
             { q: "Can I cancel anytime?", a: "Yes. Pro and Studio are monthly subscriptions with no lock-in. Cancel anytime and keep access through the end of your billing period. Unused credit blocks carry over." },
             { q: "How do income features work?", a: "Studio subscribers can sell Monologue Masterclasses (you keep 85%), set up PASS fan memberships ($3/$9/$19 tiers, you keep 85%), build Gemini voice prints, and use the Client Delivery Portal (3% transaction fee). All earnings are visible in the STUDIO dashboard with monthly payouts." },
-            { q: "Who processes payments?", a: "All payments are securely processed by Manifest Financial. We never store your card details." },
+            { q: "Who processes payments?", a: "All payments are securely processed by Stripe. Your card details are never stored on Line Runner — they go straight from your browser to Stripe over HTTPS." },
           ].map((faq) => (
             <details key={faq.q} className="group bg-surface border border-border rounded-xl">
               <summary className="flex items-center justify-between p-5 cursor-pointer font-medium">
@@ -376,7 +356,7 @@ export default function PricingPage() {
       <div className="mt-16 text-center">
         <div className="flex items-center justify-center gap-8 text-sm text-muted flex-wrap">
           <div className="flex items-center gap-2"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>Secure payments</div>
-          <div className="flex items-center gap-2"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>Manifest Financial</div>
+          <div className="flex items-center gap-2"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>Stripe</div>
           <div className="flex items-center gap-2"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" /></svg>Cancel anytime</div>
         </div>
       </div>
