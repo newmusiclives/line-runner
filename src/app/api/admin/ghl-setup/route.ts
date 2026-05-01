@@ -235,28 +235,40 @@ async function actionFields(apiKey: string, locationId: string) {
 
 async function actionSnapshot(apiKey: string, locationId: string) {
   const [tplRes, fieldsRes, contactsRes] = await Promise.all([
-    ghlRequest<{ templates?: Array<{ name: string; id?: string }> }>(
+    // GHL list templates lives at the same /emails/builder path as create, with GET
+    ghlRequest<{
+      templates?: Array<{ name: string; id?: string }>;
+      data?: Array<{ name: string; id?: string }>;
+    }>(
       apiKey,
-      `/emails/templates?locationId=${locationId}&limit=20`
+      `/emails/builder?locationId=${locationId}&limit=50`
     ),
     ghlRequest<{ customFields?: Array<{ name?: string }> }>(
       apiKey,
       `/locations/${locationId}/customFields?model=contact`
     ),
-    ghlRequest<{ contacts?: Array<{ id: string; email?: string; tags?: string[] }>; total?: number }>(
-      apiKey,
-      `/contacts/?locationId=${locationId}&limit=10`
-    ),
+    // GHL contacts search (POST) is the supported v2 way; supports filters and tags
+    ghlRequest<{
+      contacts?: Array<{ id: string; email?: string; tags?: string[] }>;
+      total?: number;
+    }>(apiKey, `/contacts/search`, {
+      method: "POST",
+      body: JSON.stringify({ locationId, pageLimit: 10 }),
+    }),
   ]);
+
+  // Templates may come back under .templates or .data depending on API version
+  const templates =
+    tplRes.data?.templates || tplRes.data?.data || [];
 
   return {
     ok: true,
-    templates: tplRes.data?.templates || [],
+    templates,
     templatesError: tplRes.ok ? null : tplRes.error,
     fields: fieldsRes.data?.customFields || [],
     fieldsError: fieldsRes.ok ? null : fieldsRes.error,
     contacts: contactsRes.data?.contacts || [],
-    contactsTotal: contactsRes.data?.total ?? 0,
+    contactsTotal: contactsRes.data?.total ?? (contactsRes.data?.contacts?.length ?? 0),
     contactsError: contactsRes.ok ? null : contactsRes.error,
   };
 }
