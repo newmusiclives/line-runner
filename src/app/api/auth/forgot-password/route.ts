@@ -49,9 +49,15 @@ export async function POST(request: Request) {
   const baseUrl = process.env.NEXTAUTH_URL || "https://rehearse-perform-earn.netlify.app";
   const resetLink = `${baseUrl}/auth/reset-password?token=${token}`;
 
-  // Send email
+  // Send email — always return success to prevent enumeration, but log failures
+  // server-side so they show up in Netlify function logs.
   const { subject, html } = passwordResetEmail(resetLink, user.name || "there");
-  await sendEmail({ to: email, subject, html });
+  const sent = await sendEmail({ to: email, subject, html });
+  if (!sent) {
+    console.error(
+      `[forgot-password] Reset email could not be delivered to ${email}. Token created but the user will not see it.`
+    );
+  }
 
   return NextResponse.json({ success: true });
 }

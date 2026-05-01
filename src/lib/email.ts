@@ -36,7 +36,12 @@ async function sendViaGhl(
   try {
     const apiKey = await getSetting("gohighlevel_api_key");
     const locationId = await getSetting("gohighlevel_location_id");
-    if (!apiKey || !locationId) return false;
+    if (!apiKey || !locationId) {
+      console.warn(
+        `[email] Cannot send to ${options.to}: GoHighLevel not configured (missing api key or location id)`
+      );
+      return false;
+    }
 
     // First ensure contact exists
     await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
@@ -64,10 +69,18 @@ async function sendViaGhl(
       }
     );
 
-    if (!searchRes.ok) return false;
+    if (!searchRes.ok) {
+      console.error(
+        `[email] GHL contact search failed for ${options.to}: HTTP ${searchRes.status} ${searchRes.statusText}`
+      );
+      return false;
+    }
     const searchData = await searchRes.json();
     const contactId = searchData?.contact?.id;
-    if (!contactId) return false;
+    if (!contactId) {
+      console.error(`[email] GHL contact ID not found for ${options.to} after upsert`);
+      return false;
+    }
 
     // Send email via GHL
     const emailRes = await fetch(
@@ -89,8 +102,19 @@ async function sendViaGhl(
       }
     );
 
-    return emailRes.ok;
-  } catch {
+    if (!emailRes.ok) {
+      const body = await emailRes.text().catch(() => "");
+      console.error(
+        `[email] GHL send failed for ${options.to}: HTTP ${emailRes.status} ${emailRes.statusText} ${body.slice(0, 200)}`
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error(
+      `[email] GHL send threw for ${options.to}:`,
+      err instanceof Error ? err.message : err
+    );
     return false;
   }
 }

@@ -61,15 +61,37 @@ export default function UploadPage() {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/scripts/${id}`);
-        if (!res.ok) {
+        const [scriptRes, configRes] = await Promise.all([
+          fetch(`/api/scripts/${id}`),
+          fetch(`/api/scripts/${id}/config`),
+        ]);
+        if (!scriptRes.ok) {
           if (!cancelled) setError("Could not load saved script.");
           return;
         }
-        const data = await res.json();
+        const scriptData = await scriptRes.json();
         if (cancelled) return;
-        setScript(data.parsed_data as ParsedScript);
-        setScriptId(data.id);
+        setScript(scriptData.parsed_data as ParsedScript);
+        setScriptId(scriptData.id);
+
+        // If we have a saved character + voice assignments, jump straight to "voices"
+        // so the user can review and tap Start Rehearsal without re-picking everything.
+        if (configRes.ok) {
+          const config = await configRes.json();
+          if (cancelled) return;
+          if (config.lastCharacter) {
+            setMyCharacter(config.lastCharacter);
+            if (Array.isArray(config.voiceAssignments) && config.voiceAssignments.length > 0) {
+              setVoiceAssignments(
+                config.voiceAssignments.map((a: { characterName: string; voiceConfig: VoiceAssignment }) => a.voiceConfig)
+              );
+              setStep("voices");
+              return;
+            }
+            setStep("characters");
+            return;
+          }
+        }
         setStep("characters");
       } catch {
         if (!cancelled) setError("Could not load saved script.");
@@ -99,7 +121,7 @@ export default function UploadPage() {
         // For PDF files, we extract text client-side using pdfjs
         const arrayBuffer = await file.arrayBuffer();
         const pdfjsLib = await import("pdfjs-dist");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         let fullText = "";
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -196,6 +218,22 @@ export default function UploadPage() {
       isPlaying: false,
     };
     sessionStorage.setItem("rehearsal-session", JSON.stringify(session));
+
+    // Persist character + voice config so subsequent rehearsals skip the picker
+    if (scriptId && authStatus === "authenticated") {
+      fetch(`/api/scripts/${scriptId}/config`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lastCharacter: myCharacter,
+          voiceAssignments: voiceAssignments.map((va) => ({
+            characterName: va.characterName,
+            voiceConfig: va,
+          })),
+        }),
+      }).catch(() => {});
+    }
+
     router.push(`/rehearse/${id}`);
   };
 

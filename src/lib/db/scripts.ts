@@ -68,6 +68,27 @@ export async function getVoiceAssignments(scriptId: string): Promise<{ character
   return rows as { character_name: string; voice_config: string }[];
 }
 
+let _lastCharacterColumnEnsured = false;
+async function ensureLastCharacterColumn() {
+  if (_lastCharacterColumnEnsured) return;
+  const sql = getDb();
+  await sql`ALTER TABLE scripts ADD COLUMN IF NOT EXISTS last_character TEXT`;
+  _lastCharacterColumnEnsured = true;
+}
+
+export async function setLastCharacter(scriptId: string, characterName: string) {
+  await ensureLastCharacterColumn();
+  const sql = getDb();
+  await sql`UPDATE scripts SET last_character = ${characterName}, updated_at = NOW() WHERE id = ${scriptId}`;
+}
+
+export async function getLastCharacter(scriptId: string): Promise<string | null> {
+  await ensureLastCharacterColumn();
+  const sql = getDb();
+  const rows = await sql`SELECT last_character FROM scripts WHERE id = ${scriptId} LIMIT 1`;
+  return ((rows[0] as { last_character?: string | null })?.last_character) || null;
+}
+
 // Favorites
 export async function toggleFavorite(userId: string, scriptId: string): Promise<boolean> {
   const sql = getDb();
