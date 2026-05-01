@@ -81,11 +81,17 @@ export default function PricingPage() {
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
-            {["1 scene run per month", "2,500 credits (~2.5 min AI audio)", "3 basic AI voices", "Standard rehearsal mode", "Script analysis on upload", "Line Memory Tracker", "Teleprompter mode", "Bookmarks"].map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm text-muted">
-                <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                {f}
-              </li>
+            {([
+              { text: "1 scene run per month" },
+              { text: "2,500 credits (~2.5 min AI audio)" },
+              { text: "3 basic AI voices" },
+              { text: "Standard rehearsal mode" },
+              { text: "Script analysis on upload" },
+              { text: "Line Memory Tracker" },
+              { text: "Teleprompter mode" },
+              { text: "Bookmarks" },
+            ] as const).map((f) => (
+              <FeatureLi key={f.text} text={f.text} />
             ))}
           </ul>
           <Link href="/auth/register" className="w-full py-3 rounded-xl text-center font-semibold transition-all bg-surface-light hover:bg-border text-foreground block">Get Started Free</Link>
@@ -105,23 +111,21 @@ export default function PricingPage() {
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
-            {[
-              "40,000 credits/month",
-              "Unlimited scene runs",
-              "All 10 rehearsal modes",
-              "10 AI voices, full customisation",
-              "AI Performance Coach",
-              "Subtext, Wildcard, Cold Read",
-              "Emotional Arc + Relationship Dynamics",
-              "Annotations (8 types + voice memos)",
-              "Self-Tape Studio with 1080p export",
-              "Audition Vault + Scene Exchange",
-              "Credit blocks from $8 when you need more",
-            ].map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm text-muted">
-                <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                {f}
-              </li>
+            {([
+              { text: "Everything in Free" },
+              { text: "40,000 credits/month" },
+              { text: "Unlimited scene runs" },
+              { text: "10 AI voices, full customisation" },
+              { text: "All 10 rehearsal modes", soon: true },
+              { text: "AI Performance Coach", soon: true },
+              { text: "Subtext, Wildcard, Cold Read", soon: true },
+              { text: "Emotional Arc + Relationship Dynamics", soon: true },
+              { text: "Annotations (8 types + voice memos)", soon: true },
+              { text: "Self-Tape Studio with 1080p export", soon: true },
+              { text: "Audition Vault + Scene Exchange", soon: true },
+              { text: "Credit blocks from $8 when you need more", soon: true },
+            ] as const).map((f) => (
+              <FeatureLi key={f.text} text={f.text} soon={(f as { soon?: boolean }).soon} />
             ))}
           </ul>
           <button
@@ -146,24 +150,21 @@ export default function PricingPage() {
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
-            {[
-              "75,000 credits/month",
-              "Everything in Pro + 25 voices",
-              "VO Professional Suite (10 tools)",
-              "Demo Reel Producer (7 genres)",
-              "Client Delivery Portal",
-              "Rate Calculator & Negotiation Coach",
-              "VO Genre Training (105 scripts)",
-              "Monologue Masterclass (sell & earn)",
-              "PASS fan memberships (earn)",
-              "Voice Print Builder (Gemini)",
-              "STUDIO Business Dashboard",
-              "Credit blocks at best rates",
-            ].map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm">
-                <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                <span className={f.startsWith("Everything") ? "font-medium text-foreground" : "text-muted"}>{f}</span>
-              </li>
+            {([
+              { text: "Everything in Pro" },
+              { text: "75,000 credits/month" },
+              { text: "25 AI voices per script" },
+              { text: "VO Professional Suite (10 tools)", soon: true },
+              { text: "Demo Reel Producer (7 genres)", soon: true },
+              { text: "Client Delivery Portal", soon: true },
+              { text: "Rate Calculator & Negotiation Coach", soon: true },
+              { text: "VO Genre Training (105 scripts)", soon: true },
+              { text: "Monologue Masterclass (sell & earn)", soon: true },
+              { text: "PASS fan memberships (earn)", soon: true },
+              { text: "Voice Print Builder (Gemini)", soon: true },
+              { text: "STUDIO Business Dashboard", soon: true },
+            ] as const).map((f) => (
+              <FeatureLi key={f.text} text={f.text} soon={(f as { soon?: boolean }).soon} />
             ))}
           </ul>
           <button
@@ -188,24 +189,21 @@ export default function PricingPage() {
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
-            {[
-              "Everything in Studio",
-              "Unlimited credits (volume pricing)",
-              "Multi-seat admin dashboard",
-              "Student & faculty accounts",
-              "Director's Cut for teacher notes",
-              "Bulk script upload & management",
-              "Custom VO Curriculum modules",
-              "Co-branded platform option",
-              "Dedicated account manager",
-              "SSO / institutional login",
-              "Annual invoicing available",
-              "SLA & priority support",
-            ].map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm">
-                <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                <span className={f.startsWith("Everything") ? "font-medium text-foreground" : "text-muted"}>{f}</span>
-              </li>
+            {([
+              { text: "Everything in Studio" },
+              { text: "Unlimited credits (volume pricing)" },
+              { text: "Annual invoicing available" },
+              { text: "Multi-seat admin dashboard", soon: true },
+              { text: "Student & faculty accounts", soon: true },
+              { text: "Director's Cut for teacher notes", soon: true },
+              { text: "Bulk script upload & management", soon: true },
+              { text: "Custom VO Curriculum modules", soon: true },
+              { text: "Co-branded platform option", soon: true },
+              { text: "Dedicated account manager", soon: true },
+              { text: "SSO / institutional login", soon: true },
+              { text: "SLA & priority support", soon: true },
+            ] as const).map((f) => (
+              <FeatureLi key={f.text} text={f.text} soon={(f as { soon?: boolean }).soon} />
             ))}
           </ul>
           <a href="mailto:enterprise@linerunner.app" className="w-full py-3 rounded-xl font-semibold transition-all bg-warning/10 hover:bg-warning/20 text-warning border border-warning/20 block text-center">Contact Sales</a>
@@ -361,5 +359,29 @@ export default function PricingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function FeatureLi({ text, soon }: { text: string; soon?: boolean }) {
+  return (
+    <li className="flex items-start gap-2 text-sm">
+      <svg
+        className={`w-4 h-4 shrink-0 mt-0.5 ${soon ? "text-muted/50" : "text-success"}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={2}
+        stroke="currentColor"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
+      <span className={`flex-1 ${soon ? "text-muted/70" : "text-muted"}`}>
+        {text}
+        {soon && (
+          <span className="ml-1.5 inline-block bg-warning/15 text-warning text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded">
+            Soon
+          </span>
+        )}
+      </span>
+    </li>
   );
 }

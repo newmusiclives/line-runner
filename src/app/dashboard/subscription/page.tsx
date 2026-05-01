@@ -21,7 +21,17 @@ interface SubCheck {
   currentPeriodEnd?: string;
 }
 
-const PLANS = [
+type PlanFeature = { text: string; soon?: boolean };
+
+const PLANS: {
+  id: string;
+  name: string;
+  price: string;
+  period: string;
+  minutes: number;
+  features: PlanFeature[];
+  popular?: boolean;
+}[] = [
   {
     id: "free",
     name: "Free",
@@ -29,10 +39,12 @@ const PLANS = [
     period: "forever",
     minutes: 2.5,
     features: [
-      "2.5 voice minutes / month",
-      "1 scene run per month",
-      "Standard rehearsal mode",
-      "Line Memory + Bookmarks + Teleprompter",
+      { text: "Script analysis on upload" },
+      { text: "Line Memory Tracker" },
+      { text: "Bookmarks" },
+      { text: "Teleprompter" },
+      { text: "Standard rehearsal mode" },
+      { text: "1 scene run per month" },
     ],
   },
   {
@@ -42,11 +54,13 @@ const PLANS = [
     period: "/month",
     minutes: 40,
     features: [
-      "40 voice minutes / month",
-      "Unlimited scene runs",
-      "All 10 rehearsal modes",
-      "AI Performance Coach",
-      "Self-Tape Studio",
+      { text: "Everything in Free" },
+      { text: "Unlimited scene runs" },
+      { text: "AI Performance Coach", soon: true },
+      { text: "All 10 rehearsal modes", soon: true },
+      { text: "Self-Tape Studio", soon: true },
+      { text: "Audition Vault", soon: true },
+      { text: "Scene Exchange", soon: true },
     ],
     popular: true,
   },
@@ -57,11 +71,12 @@ const PLANS = [
     period: "/month",
     minutes: 75,
     features: [
-      "75 voice minutes / month",
-      "Everything in Pro",
-      "VO Professional Suite (10 tools)",
-      "Demo Reel + Client Delivery",
-      "Studio Business Dashboard",
+      { text: "Everything in Pro" },
+      { text: "VO Professional Suite (10 tools)", soon: true },
+      { text: "Demo Reel Producer", soon: true },
+      { text: "Client Delivery Portal", soon: true },
+      { text: "Studio Business Dashboard", soon: true },
+      { text: "Voice Print Builder", soon: true },
     ],
   },
 ];
@@ -257,11 +272,24 @@ export default function SubscriptionPage() {
 
               <ul className="space-y-2.5 mb-6">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm">
-                    <svg className="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <li key={feature.text} className="flex items-start gap-2 text-sm">
+                    <svg
+                      className={`w-4 h-4 shrink-0 mt-0.5 ${feature.soon ? "text-muted/50" : "text-success"}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
-                    <span className="text-muted">{feature}</span>
+                    <span className={`flex-1 ${feature.soon ? "text-muted/70" : "text-muted"}`}>
+                      {feature.text}
+                      {feature.soon && (
+                        <span className="ml-1.5 inline-block bg-warning/15 text-warning text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded">
+                          Soon
+                        </span>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
