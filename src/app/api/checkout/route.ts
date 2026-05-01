@@ -45,32 +45,46 @@ export async function POST(request: Request) {
   const stripe = await getStripe();
   const appUrl = getAppUrl();
 
-  const checkoutSession = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    line_items: [{ price: priceId, quantity: 1 }],
-    customer_email: session.user.email,
-    client_reference_id: session.user.id,
-    success_url: `${appUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/pricing?checkout=cancelled`,
-    allow_promotion_codes: true,
-    subscription_data: {
+  try {
+    const checkoutSession = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      customer_email: session.user.email,
+      client_reference_id: session.user.id,
+      success_url: `${appUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/pricing?checkout=cancelled`,
+      allow_promotion_codes: true,
+      subscription_data: {
+        metadata: {
+          userId: session.user.id,
+          planId: plan.id,
+        },
+      },
       metadata: {
         userId: session.user.id,
         planId: plan.id,
       },
-    },
-    metadata: {
-      userId: session.user.id,
-      planId: plan.id,
-    },
-  });
+    });
 
-  if (!checkoutSession.url) {
+    if (!checkoutSession.url) {
+      return NextResponse.json(
+        { error: "Stripe did not return a checkout URL" },
+        { status: 502 }
+      );
+    }
+
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error creating checkout session";
+    const code = (err as { code?: string })?.code;
     return NextResponse.json(
-      { error: "Stripe did not return a checkout URL" },
+      {
+        error: `Stripe rejected the checkout request: ${message}`,
+        code,
+        priceId,
+        appUrl,
+      },
       { status: 502 }
     );
   }
-
-  return NextResponse.json({ url: checkoutSession.url });
 }
