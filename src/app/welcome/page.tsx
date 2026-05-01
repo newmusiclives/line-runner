@@ -82,6 +82,12 @@ export default function WelcomePage() {
     }
   }, [status, router]);
 
+  // Mark the user as onboarded on first visit so /dashboard stops redirecting here
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetch("/api/users/me/onboard", { method: "POST" }).catch(() => {});
+  }, [status]);
+
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">

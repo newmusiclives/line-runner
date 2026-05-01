@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type {
   ScriptSummary,
@@ -11,6 +12,7 @@ import type {
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [scripts, setScripts] = useState<ScriptSummary[]>([]);
   const [rehearsals, setRehearsals] = useState<RehearsalSessionSummary[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(
@@ -21,12 +23,22 @@ export default function DashboardPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [scriptsRes, rehearsalsRes, subRes] = await Promise.all([
+      const [scriptsRes, rehearsalsRes, subRes, meRes] = await Promise.all([
         fetch("/api/scripts"),
         fetch("/api/rehearsals"),
         fetch("/api/users/me/subscription"),
+        fetch("/api/users/me"),
       ]);
-      if (scriptsRes.ok) setScripts(await scriptsRes.json());
+      const scriptsData = scriptsRes.ok ? await scriptsRes.json() : [];
+      const meData = meRes.ok ? await meRes.json() : null;
+
+      // First-time user: send them through /welcome before showing the empty dashboard
+      if (meData && !meData.onboarded_at && Array.isArray(scriptsData) && scriptsData.length === 0) {
+        router.replace("/welcome");
+        return;
+      }
+
+      setScripts(scriptsData);
       if (rehearsalsRes.ok) setRehearsals(await rehearsalsRes.json());
       if (subRes.ok) setSubscription(await subRes.json());
     } catch {
@@ -34,7 +46,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     fetchData();

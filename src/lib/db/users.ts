@@ -12,6 +12,21 @@ export interface DbUser {
   created_at: string;
   updated_at: string;
   suspended_at: string | null;
+  onboarded_at: string | null;
+}
+
+let _onboardedColumnEnsured = false;
+async function ensureOnboardedColumn() {
+  if (_onboardedColumnEnsured) return;
+  const sql = getDb();
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded_at TIMESTAMPTZ`;
+  _onboardedColumnEnsured = true;
+}
+
+export async function markUserOnboarded(id: string): Promise<void> {
+  await ensureOnboardedColumn();
+  const sql = getDb();
+  await sql`UPDATE users SET onboarded_at = NOW() WHERE id = ${id} AND onboarded_at IS NULL`;
 }
 
 export async function createUser(email: string, name: string, password?: string): Promise<DbUser> {
