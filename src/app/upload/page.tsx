@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { parseScript, extractTextFromFile } from "@/lib/parse-script";
 import {
   getDefaultVoiceAssignment,
@@ -15,15 +16,71 @@ type Step = "upload" | "characters" | "voices";
 
 export default function UploadPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { status: authStatus } = useSession();
   const [step, setStep] = useState<Step>("upload");
   const [dragOver, setDragOver] = useState(false);
   const [script, setScript] = useState<ParsedScript | null>(null);
+  const [scriptId, setScriptId] = useState<string | null>(null);
   const [myCharacter, setMyCharacter] = useState<string>("");
   const [voiceAssignments, setVoiceAssignments] = useState<VoiceAssignment[]>(
     []
   );
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
+
+  const persistScript = useCallback(
+    async (parsed: ParsedScript, text: string, fileName: string) => {
+      if (authStatus !== "authenticated") return null;
+      try {
+        const res = await fetch("/api/scripts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: parsed.title,
+            fileName,
+            rawText: text,
+            parsedData: JSON.stringify(parsed),
+          }),
+        });
+        if (!res.ok) return null;
+        const saved = await res.json();
+        return saved.id as string;
+      } catch {
+        return null;
+      }
+    },
+    [authStatus]
+  );
+
+  // Load existing saved script when ?scriptId=... is present
+  useEffect(() => {
+    const id = searchParams.get("scriptId");
+    if (!id || authStatus !== "authenticated") return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/scripts/${id}`);
+        if (!res.ok) {
+          if (!cancelled) setError("Could not load saved script.");
+          return;
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        setScript(data.parsed_data as ParsedScript);
+        setScriptId(data.id);
+        setStep("characters");
+      } catch {
+        if (!cancelled) setError("Could not load saved script.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, authStatus]);
 
   const handleFile = useCallback(async (file: File) => {
     setError("");
@@ -56,6 +113,8 @@ export default function UploadPage() {
         }
         const parsed = parseScript(fullText, file.name);
         setScript(parsed);
+        const savedId = await persistScript(parsed, fullText, file.name);
+        if (savedId) setScriptId(savedId);
         setStep("characters");
       } else if (
         ext === "txt" ||
@@ -65,6 +124,8 @@ export default function UploadPage() {
         const text = await extractTextFromFile(file);
         const parsed = parseScript(text, file.name);
         setScript(parsed);
+        const savedId = await persistScript(parsed, text, file.name);
+        if (savedId) setScriptId(savedId);
         setStep("characters");
       } else {
         setError(
@@ -124,9 +185,10 @@ export default function UploadPage() {
   };
 
   const startRehearsal = () => {
-    // Store session in sessionStorage
+    // Use DB script id when available so /rehearse/[id] is a deep-linkable URL
+    const id = scriptId ?? `session-${Date.now()}`;
     const session = {
-      id: `session-${Date.now()}`,
+      id,
       script,
       myCharacter,
       voiceAssignments,
@@ -134,7 +196,7 @@ export default function UploadPage() {
       isPlaying: false,
     };
     sessionStorage.setItem("rehearsal-session", JSON.stringify(session));
-    router.push(`/rehearse/${session.id}`);
+    router.push(`/rehearse/${id}`);
   };
 
   return (
@@ -276,6 +338,9 @@ JULIET: A thousand times good night!
 ROMEO: A thousand times the worse, to want thy light. Love goes toward love, as schoolboys from their books; but love from love, toward school with heavy looks.`;
                 const parsed = parseScript(sampleScript, "Romeo and Juliet.txt");
                 setScript(parsed);
+                persistScript(parsed, sampleScript, "Romeo and Juliet.txt").then((id) => {
+                  if (id) setScriptId(id);
+                });
                 setStep("characters");
               }}
               className="text-base text-accent-light hover:text-accent transition-colors underline underline-offset-4"

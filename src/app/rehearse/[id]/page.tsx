@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import { BrowserVoiceEngine, GeminiVoiceEngine, createVoiceEngine } from "@/lib/voice-engine";
 import { detectAllEmotions, getEmotionVoiceAdjustment, EMOTION_COLORS } from "@/lib/ai/emotion-detector";
@@ -38,7 +38,12 @@ import TimingControls from "@/components/rehearsal/TimingControls";
 import type { TimingSettings } from "@/components/rehearsal/TimingControls";
 import RemoteControlPanel from "@/components/rehearsal/RemoteControlPanel";
 
-export default function RehearsePage() {
+export default function RehearsePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: routeId } = use(params);
   const router = useRouter();
   const [session, setSession] = useState<RehearsalSession | null>(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
@@ -101,6 +106,11 @@ export default function RehearsePage() {
     const data = sessionStorage.getItem("rehearsal-session");
     if (data) {
       const parsed = JSON.parse(data) as RehearsalSession;
+      // Stale session for a different script — restart character/voice flow
+      if (parsed.id !== routeId) {
+        router.replace(`/upload?scriptId=${routeId}`);
+        return;
+      }
       setSession(parsed);
       const a = analyzeScript(parsed.script.lines, parsed.script.characters);
       setAnalysis(a);
@@ -109,9 +119,10 @@ export default function RehearsePage() {
       const dn = generateDirectorNotes(parsed.script.lines, emo, parsed.myCharacter);
       setDirectorNotes(dn);
     } else {
-      router.push("/upload");
+      // Deep-link / reload with no session — send through upload to pick character + voices
+      router.replace(`/upload?scriptId=${routeId}`);
     }
-  }, [router]);
+  }, [router, routeId]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
