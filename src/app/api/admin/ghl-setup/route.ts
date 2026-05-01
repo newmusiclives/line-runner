@@ -132,26 +132,49 @@ async function actionFields(apiKey: string, locationId: string) {
     apiKey,
     `/locations/${locationId}/customFields?model=contact`
   );
-  const existing = new Set(
-    (existingRes.data?.customFields || []).map((f) => f.fieldKey || f.name).filter(Boolean) as string[]
-  );
+
+  // GHL stores fieldKey as "contact.subscription_status" — match against both
+  // the prefixed and stripped form, plus the human-readable name (case-insensitive).
+  const existing = new Set<string>();
+  for (const f of existingRes.data?.customFields || []) {
+    if (f.fieldKey) {
+      existing.add(f.fieldKey);
+      const dot = f.fieldKey.indexOf(".");
+      if (dot >= 0) existing.add(f.fieldKey.slice(dot + 1));
+    }
+    if (f.name) existing.add(f.name.toLowerCase());
+  }
 
   const results: { name: string; ok: boolean; message: string }[] = [];
 
   for (const field of CUSTOM_FIELDS) {
-    if (existing.has(field.fieldKey) || existing.has(field.name)) {
+    if (
+      existing.has(field.fieldKey) ||
+      existing.has(`contact.${field.fieldKey}`) ||
+      existing.has(field.name.toLowerCase())
+    ) {
       results.push({ name: field.name, ok: true, message: "Already exists" });
       continue;
     }
-    const res = await ghlRequest(apiKey, `/locations/${locationId}/customFields`, {
-      method: "POST",
-      body: JSON.stringify({
-        name: field.name,
-        dataType: field.dataType,
-        placeholder: field.placeholder,
-        model: "contact",
-      }),
-    });
+    const res = await ghlRequest<{ customField?: { id?: string } }>(
+      apiKey,
+      `/locations/${locationId}/customFields`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          name: field.name,
+          dataType: field.dataType,
+          placeholder: field.placeholder,
+          model: "contact",
+        }),
+      }
+    );
+    // GHL also returns 400 with "already exists" if the create races a fresh field.
+    // Treat that as success in our results so re-runs are clean.
+    if (!res.ok && res.error?.includes("already exists")) {
+      results.push({ name: field.name, ok: true, message: "Already exists" });
+      continue;
+    }
     results.push({
       name: field.name,
       ok: res.ok,
