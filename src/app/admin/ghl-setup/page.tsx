@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { EMAIL_TEMPLATES } from "@/lib/email-templates";
 
 interface VerifyResult {
   ok: boolean;
@@ -120,6 +121,9 @@ export default function GhlSetupPage() {
             );
           }}
         />
+
+        {/* Step 2b — Paste HTML into the empty templates */}
+        <TemplateBodies />
 
         {/* Custom fields */}
         <Step
@@ -251,6 +255,62 @@ export default function GhlSetupPage() {
             email → Template <em>&quot;Line Runner — Churn Winback&quot;</em>.
           </li>
         </ol>
+      </div>
+    </div>
+  );
+}
+
+function TemplateBodies() {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const copy = async (key: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      setCopied(null);
+    }
+  };
+
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-5">
+      <div className="flex items-start gap-4">
+        <div className="w-8 h-8 rounded-full bg-warning/15 text-warning flex items-center justify-center font-semibold text-sm shrink-0">
+          2b
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-semibold mb-1">Paste HTML into each empty template</h2>
+          <p className="text-sm text-muted mb-4">
+            GHL&apos;s API only creates a template <em>shell</em> — the HTML body has to be pasted
+            in once via the GHL UI. Open <span className="font-mono text-foreground">GHL → Marketing → Emails → Templates</span>,
+            click each Line Runner template, switch the editor to <strong>HTML / source view</strong>,
+            and paste the matching block below.
+          </p>
+          <div className="space-y-4">
+            {EMAIL_TEMPLATES.map((tpl) => (
+              <div key={tpl.key} className="bg-background border border-border rounded-lg overflow-hidden">
+                <div className="p-3 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm">{tpl.name}</div>
+                    <div className="text-xs text-muted truncate">
+                      Subject: <span className="font-mono">{tpl.subject}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => copy(tpl.key, tpl.html)}
+                    className="px-3 py-1.5 bg-accent text-white rounded-lg text-xs font-medium hover:bg-accent-dark transition-colors shrink-0"
+                  >
+                    {copied === tpl.key ? "✓ Copied" : "Copy HTML"}
+                  </button>
+                </div>
+                <pre className="p-3 text-[11px] text-muted/80 overflow-auto max-h-40 leading-relaxed font-mono whitespace-pre-wrap break-words">
+                  {tpl.html}
+                </pre>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
