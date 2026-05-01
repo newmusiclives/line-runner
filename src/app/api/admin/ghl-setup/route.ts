@@ -105,6 +105,7 @@ async function actionTemplates(apiKey: string, locationId: string) {
         body: JSON.stringify({
           locationId,
           name: tpl.name,
+          title: tpl.name, // GHL UI shows `title` as the visible template name
           type: "html",
           subject: tpl.subject,
           html: tpl.html,
