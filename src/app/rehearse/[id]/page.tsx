@@ -38,6 +38,7 @@ import PlaybackControls from "@/components/rehearsal/PlaybackControls";
 import TimingControls from "@/components/rehearsal/TimingControls";
 import type { TimingSettings } from "@/components/rehearsal/TimingControls";
 import RemoteControlPanel from "@/components/rehearsal/RemoteControlPanel";
+import { useLineListener } from "@/hooks/useLineListener";
 
 export default function RehearsePage({
   params,
@@ -61,6 +62,8 @@ export default function RehearsePage({
   const [timingSettings, setTimingSettings] = useState<TimingSettings>({
     pauseDuration: 2,
     playbackSpeed: 1.0,
+    listenMode: true,
+    matchThreshold: 0.55,
   });
 
   // Feature states
@@ -290,6 +293,35 @@ export default function RehearsePage({
     });
   }, [getVoiceForCharacter, advanceLine, emotions, mode, wildcardModifier, timingSettings.playbackSpeed]);
 
+  // ─── Mic listener for auto-advance on user lines ─────────────
+  const advanceFromListener = useCallback(() => {
+    if (isPausedRef.current) return;
+    setWaitingForUser((wasWaiting) => {
+      if (wasWaiting) advanceLine();
+      return false;
+    });
+  }, [advanceLine]);
+
+  const currentLineForListener = dialogueLines[currentLineIndex];
+  const isMyLineNow =
+    !!session && currentLineForListener?.character === session.myCharacter;
+  const modeAllowsListener =
+    mode !== "speed-run" && mode !== "sleep-learning" && mode !== "teleprompter";
+
+  const lineListener = useLineListener({
+    enabled:
+      isMyLineNow &&
+      waitingForUser &&
+      timingSettings.listenMode &&
+      isPlaying &&
+      !isPaused &&
+      modeAllowsListener,
+    expectedText: isMyLineNow ? currentLineForListener?.text ?? "" : "",
+    onMatch: advanceFromListener,
+    onSilence: advanceFromListener,
+    matchThreshold: timingSettings.matchThreshold,
+  });
+
   // Handle line changes during playback
   useEffect(() => {
     if (!session || !isPlaying || isPaused) return;
@@ -303,7 +335,10 @@ export default function RehearsePage({
       setWaitingForUser(true);
       voiceEngineRef.current?.stop();
       lineStartTimeRef.current = Date.now();
-      if (autoAdvance) {
+      // When listen-mode is on and supported, the mic listener triggers advance.
+      // Fall back to fixed-pause timer otherwise (or wait for manual Done).
+      const useListener = timingSettings.listenMode && lineListener.isSupported;
+      if (autoAdvance && !useListener) {
         const timeout = setTimeout(() => {
           if (!isPausedRef.current) {
             setWaitingForUser(false);
@@ -320,7 +355,7 @@ export default function RehearsePage({
       // Cue-only mode: speak but show minimal text (handled in component)
       speakLine(currentLine);
     }
-  }, [currentLineIndex, isPlaying, isPaused, session, autoAdvance, timingSettings.pauseDuration, speakLine, advanceLine, dialogueLines, mode]);
+  }, [currentLineIndex, isPlaying, isPaused, session, autoAdvance, timingSettings.pauseDuration, timingSettings.listenMode, lineListener.isSupported, speakLine, advanceLine, dialogueLines, mode]);
 
   // Play/Pause/Stop handlers
   const handlePlay = useCallback(() => {
@@ -585,15 +620,36 @@ export default function RehearsePage({
             </div>
 
             {isCurrentLine && isMyLine && waitingForUser && (
-              <div className="mt-3 ml-9 flex items-center gap-3">
-                <div className="flex items-center gap-1.5 text-sm text-success">
-                  <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                  Your line — speak now
-                </div>
-                {!autoAdvance && (
+              <div className="mt-3 ml-9 flex flex-col gap-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-sm text-success">
+                    <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
+                    Your line — speak now
+                  </div>
+                  {timingSettings.listenMode && lineListener.isSupported && lineListener.isListening && (
+                    <div className="flex items-center gap-1.5 text-xs text-accent-light bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Zm-7 9a1 1 0 0 1 2 0 5 5 0 0 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z" />
+                      </svg>
+                      Listening · {Math.round(lineListener.matchScore * 100)}%
+                    </div>
+                  )}
+                  {timingSettings.listenMode && !lineListener.isSupported && (
+                    <div className="text-xs text-warning bg-warning/10 border border-warning/20 px-2 py-0.5 rounded-full">
+                      Mic listening not supported in this browser
+                    </div>
+                  )}
                   <button onClick={(e) => { e.stopPropagation(); setWaitingForUser(false); advanceLine(); }} className="text-sm bg-success/20 text-success px-3 py-1 rounded-full hover:bg-success/30 transition-colors">
                     Done
                   </button>
+                </div>
+                {timingSettings.listenMode && lineListener.isListening && (lineListener.partialTranscript || lineListener.finalTranscript) && (
+                  <p className="text-xs text-muted italic truncate">
+                    {(lineListener.finalTranscript + " " + lineListener.partialTranscript).trim()}
+                  </p>
+                )}
+                {timingSettings.listenMode && lineListener.error && (
+                  <p className="text-xs text-danger">Mic error: {lineListener.error}</p>
                 )}
               </div>
             )}
