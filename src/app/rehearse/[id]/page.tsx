@@ -23,6 +23,7 @@ import PreAuditionRitual from "@/components/rehearsal/PreAuditionRitual";
 
 // Mode components
 import MemorizationMode from "@/components/rehearsal/MemorizationMode";
+import MonologueMode from "@/components/rehearsal/MonologueMode";
 import SpeedRunMode from "@/components/rehearsal/SpeedRunMode";
 import CueOnlyMode from "@/components/rehearsal/CueOnlyMode";
 import TeleprompterMode from "@/components/rehearsal/TeleprompterMode";
@@ -432,6 +433,15 @@ export default function RehearsePage({
       case "memorization":
         return (
           <MemorizationMode
+            lines={session.script.lines}
+            myCharacter={session.myCharacter}
+            currentLineIndex={currentLineIndex}
+          />
+        );
+
+      case "monologue":
+        return (
+          <MonologueMode
             lines={session.script.lines}
             myCharacter={session.myCharacter}
             currentLineIndex={currentLineIndex}
