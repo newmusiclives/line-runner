@@ -1,95 +1,93 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth/config";
 import { CREDIT_BLOCKS } from "@/lib/manifest-financial";
 import { getActiveSubscription } from "@/lib/db/subscriptions";
-import { ensureTable, getSetting } from "@/lib/db/integrations";
-import { getDb } from "@/lib/db";
-import { nanoid } from "nanoid";
+import { getStripe, getAppUrl, isStripeConfigured } from "@/lib/stripe";
+
+export const runtime = "nodejs";
+
+const bodySchema = z.object({
+  blockId: z.string().min(1),
+});
 
 export async function POST(request: Request) {
+  if (!(await isStripeConfigured())) {
+    return NextResponse.json(
+      { error: "Stripe is not configured on the server" },
+      { status: 503 }
+    );
+  }
+
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user?.id || !session.user.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { blockId } = await request.json();
-  const block = CREDIT_BLOCKS.find((b) => b.id === blockId);
+  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const block = CREDIT_BLOCKS.find((b) => b.id === parsed.data.blockId);
   if (!block) {
     return NextResponse.json({ error: "Invalid block" }, { status: 400 });
   }
 
-  // Must have Pro or Studio subscription to buy blocks
+  // Credit blocks require a paid subscription
   const sub = await getActiveSubscription(session.user.id);
   if (!sub || sub.plan_id === "free") {
-    return NextResponse.json({ error: "Credit blocks require a Pro or Studio subscription" }, { status: 403 });
+    return NextResponse.json(
+      { error: "Credit blocks require a Pro or Studio subscription" },
+      { status: 403 }
+    );
   }
 
-  const amountCents = Math.round(block.price * 100);
+  const stripe = await getStripe();
+  const appUrl = getAppUrl();
 
-  // Try Manifest Financial
-  await ensureTable();
-  const manifestUrl = await getSetting("manifest_api_url");
-  const manifestKey = await getSetting("manifest_secret_key");
-
-  let transactionId: string;
-  let mode: "live" | "simulated";
-
-  if (manifestUrl && manifestKey) {
-    try {
-      const payRes = await fetch(`${manifestUrl}/payments/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${manifestKey}`,
+  try {
+    const checkoutSession = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: Math.round(block.price * 100),
+            product_data: {
+              name: `Line Runner — ${block.minutes} minute credit block`,
+              description: `${block.credits.toLocaleString()} credits ($${block.perMinute.toFixed(2)}/min)`,
+            },
+          },
+          quantity: 1,
         },
-        body: JSON.stringify({
-          amount: amountCents,
-          currency: "usd",
-          description: `Line Runner - ${block.minutes} minute credit block`,
-          customer_email: session.user.email,
-          metadata: { block_id: block.id, user_id: session.user.id },
-        }),
-      });
+      ],
+      customer_email: session.user.email,
+      client_reference_id: session.user.id,
+      success_url: `${appUrl}/checkout/success?type=credit&block=${block.id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/dashboard/credits?checkout=cancelled`,
+      metadata: {
+        userId: session.user.id,
+        subscriptionId: sub.id,
+        blockId: block.id,
+        minutes: String(block.minutes),
+      },
+    });
 
-      if (!payRes.ok) {
-        return NextResponse.json({ error: "Payment failed" }, { status: 402 });
-      }
-
-      const payData = await payRes.json();
-      transactionId = payData.id || payData.transaction_id || payData.payment_id;
-      mode = "live";
-    } catch (err: any) {
-      return NextResponse.json({ error: "Payment error", details: err.message }, { status: 502 });
+    if (!checkoutSession.url) {
+      return NextResponse.json(
+        { error: "Stripe did not return a checkout URL" },
+        { status: 502 }
+      );
     }
-  } else {
-    transactionId = `sim_block_${Date.now()}`;
-    mode = "simulated";
+
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error creating checkout session";
+    const code = (err as { code?: string })?.code;
+    return NextResponse.json(
+      { error: `Stripe rejected the credit block checkout: ${message}`, code },
+      { status: 502 }
+    );
   }
-
-  // Add minutes to subscription
-  const sql = getDb();
-  await sql`UPDATE subscriptions SET minutes_included = minutes_included + ${block.minutes} WHERE id = ${sub.id}`;
-
-  // Record purchase
-  await sql`CREATE TABLE IF NOT EXISTS credit_purchases (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    subscription_id TEXT NOT NULL,
-    block_id TEXT NOT NULL,
-    minutes_added INT NOT NULL,
-    amount_cents INT NOT NULL,
-    transaction_id TEXT,
-    mode TEXT DEFAULT 'simulated',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-  )`;
-
-  await sql`INSERT INTO credit_purchases (id, user_id, subscription_id, block_id, minutes_added, amount_cents, transaction_id, mode)
-    VALUES (${nanoid()}, ${session.user.id}, ${sub.id}, ${block.id}, ${block.minutes}, ${amountCents}, ${transactionId}, ${mode})`;
-
-  return NextResponse.json({
-    success: true,
-    mode,
-    minutesAdded: block.minutes,
-    newTotal: sub.minutes_included + block.minutes,
-  });
 }

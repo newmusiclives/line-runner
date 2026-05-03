@@ -38,16 +38,27 @@ const PLAN_DETAILS: Record<string, { name: string; price: number; minutes: numbe
   },
 };
 
+const CREDIT_BLOCK_MINUTES: Record<string, number> = {
+  block_10: 10,
+  block_30: 30,
+  block_60: 60,
+  block_120: 120,
+};
+
 function SuccessInner() {
   const router = useRouter();
   const params = useSearchParams();
   const { status: authStatus } = useSession();
+  const purchaseType = params.get("type"); // "credit" for one-time blocks; null/undefined for subscription
+  const blockId = params.get("block");
   const planId = params.get("plan") || "monthly";
   const sessionId = params.get("session_id");
   const [sub, setSub] = useState<SubInfo | null>(null);
   const [pollAttempts, setPollAttempts] = useState(0);
 
   const planDetails = PLAN_DETAILS[planId] || PLAN_DETAILS.monthly;
+  const isCreditPurchase = purchaseType === "credit" && blockId;
+  const creditMinutes = blockId ? CREDIT_BLOCK_MINUTES[blockId] ?? 0 : 0;
 
   useEffect(() => {
     if (authStatus === "unauthenticated") {
@@ -58,6 +69,7 @@ function SuccessInner() {
   // Poll subscription status until the webhook has flipped us to active.
   // After ~12s of polling we stop and show the optimistic state.
   useEffect(() => {
+    if (isCreditPurchase) return; // credit-block flow doesn't change subscription state
     if (authStatus !== "authenticated") return;
     if (sub?.planId === planId && sub.status === "active") return;
     if (pollAttempts > 6) return;
@@ -76,7 +88,7 @@ function SuccessInner() {
     }, pollAttempts === 0 ? 0 : 2000);
 
     return () => clearTimeout(t);
-  }, [authStatus, sub, planId, pollAttempts]);
+  }, [authStatus, sub, planId, pollAttempts, isCreditPurchase]);
 
   const subActive = sub?.planId === planId && sub.status === "active";
   const stillProcessing = !subActive && pollAttempts <= 6;
@@ -92,6 +104,68 @@ function SuccessInner() {
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           />
         </svg>
+      </div>
+    );
+  }
+
+  if (isCreditPurchase) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12 md:py-16">
+        <div className="text-center mb-8 sm:mb-10">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-success/15 border-2 border-success/30 flex items-center justify-center">
+            <svg
+              className="w-10 h-10 text-success"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2.5}
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3">
+            +{creditMinutes} minutes added.
+          </h1>
+          <p className="text-muted text-base sm:text-lg">
+            Your credit block is being applied to your subscription. Stripe usually confirms within
+            a few seconds.
+          </p>
+        </div>
+
+        <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6 mb-6 flex items-start gap-3">
+          <svg
+            className="w-5 h-5 text-muted shrink-0 mt-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25"
+            />
+          </svg>
+          <div className="text-sm text-muted">
+            A receipt has been emailed to you. Credit blocks never expire during your billing period
+            and are added on top of your monthly allowance.
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 sm:justify-center">
+          <Link
+            href="/dashboard/credits"
+            className="bg-accent hover:bg-accent-dark text-white font-semibold px-6 sm:px-8 py-3.5 rounded-xl transition-colors text-center"
+          >
+            Back to credits
+          </Link>
+          <Link
+            href="/upload"
+            className="bg-surface border border-border hover:bg-surface-light text-foreground font-semibold px-6 sm:px-8 py-3.5 rounded-xl transition-colors text-center"
+          >
+            Start a rehearsal
+          </Link>
+        </div>
       </div>
     );
   }

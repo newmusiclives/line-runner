@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { nanoid } from "nanoid";
 import { getStripe, getStripeWebhookSecret, planIdFromStripePriceId } from "@/lib/stripe";
-import { PRICING_PLANS } from "@/lib/manifest-financial";
+import { PRICING_PLANS, CREDIT_BLOCKS } from "@/lib/manifest-financial";
 import { syncContactToGhl, addTagToContact } from "@/lib/gohighlevel";
 import { getUserById } from "@/lib/db/users";
+import { getDb } from "@/lib/db";
 import {
   upsertStripeSubscription,
   updateSubscriptionStatusByStripeId,
@@ -76,6 +78,61 @@ async function persistSubscription(stripeSub: Stripe.Subscription, fallbackUserI
   return { skipped: false };
 }
 
+// Credits one-time credit-block purchases to the user's active subscription.
+// Idempotent: skips if a credit_purchases row already exists for this Stripe session.
+async function applyCreditBlockPurchase(checkoutSession: Stripe.Checkout.Session) {
+  const meta = checkoutSession.metadata || {};
+  const blockId = meta.blockId;
+  const userId = meta.userId || checkoutSession.client_reference_id;
+  const subscriptionId = meta.subscriptionId;
+
+  if (!blockId || !userId || !subscriptionId) {
+    return { skipped: true, reason: "Missing blockId/userId/subscriptionId metadata" };
+  }
+
+  const block = CREDIT_BLOCKS.find((b) => b.id === blockId);
+  if (!block) {
+    return { skipped: true, reason: `Unknown block ${blockId}` };
+  }
+
+  const sql = getDb();
+
+  await sql`CREATE TABLE IF NOT EXISTS credit_purchases (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    subscription_id TEXT NOT NULL,
+    block_id TEXT NOT NULL,
+    minutes_added INT NOT NULL,
+    amount_cents INT NOT NULL,
+    transaction_id TEXT,
+    mode TEXT DEFAULT 'simulated',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  )`;
+
+  // Idempotency: Stripe can retry webhooks. Use the session id as the dedupe key.
+  const existing = await sql`
+    SELECT id FROM credit_purchases WHERE transaction_id = ${checkoutSession.id} LIMIT 1
+  `;
+  if (existing.length > 0) {
+    return { skipped: true, reason: "Already credited for this session" };
+  }
+
+  const amountCents = checkoutSession.amount_total ?? Math.round(block.price * 100);
+
+  await sql`
+    UPDATE subscriptions
+    SET minutes_included = minutes_included + ${block.minutes}
+    WHERE id = ${subscriptionId}
+  `;
+
+  await sql`
+    INSERT INTO credit_purchases (id, user_id, subscription_id, block_id, minutes_added, amount_cents, transaction_id, mode)
+    VALUES (${nanoid()}, ${userId}, ${subscriptionId}, ${block.id}, ${block.minutes}, ${amountCents}, ${checkoutSession.id}, ${"stripe"})
+  `;
+
+  return { skipped: false };
+}
+
 export async function POST(request: Request) {
   const webhookSecret = await getStripeWebhookSecret();
   if (!webhookSecret) {
@@ -105,6 +162,30 @@ export async function POST(request: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const checkoutSession = event.data.object as Stripe.Checkout.Session;
+
+        // One-time credit-block purchase
+        if (checkoutSession.mode === "payment" && checkoutSession.metadata?.blockId) {
+          await applyCreditBlockPurchase(checkoutSession);
+
+          // Best-effort CRM tag — never blocks the webhook ack
+          const userId =
+            checkoutSession.metadata.userId || checkoutSession.client_reference_id;
+          if (userId) {
+            const user = await getUserById(userId).catch(() => null);
+            const email =
+              user?.email ||
+              checkoutSession.customer_email ||
+              checkoutSession.customer_details?.email;
+            if (email) {
+              await addTagToContact(email, [
+                "credit-block-purchase",
+                `block:${checkoutSession.metadata.blockId}`,
+              ]);
+            }
+          }
+          break;
+        }
+
         if (
           checkoutSession.mode === "subscription" &&
           typeof checkoutSession.subscription === "string"

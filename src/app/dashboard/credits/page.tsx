@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface SubscriptionInfo {
   tier: string;
@@ -26,7 +27,8 @@ const CREDIT_BLOCKS: CreditBlock[] = [
   { id: "block_120", credits: 120_000, minutes: 120, price: 60, perMinute: 0.50, savings: "Best value" },
 ];
 
-export default function CreditsPage() {
+function CreditsInner() {
+  const params = useSearchParams();
   const [sub, setSub] = useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
@@ -35,6 +37,13 @@ export default function CreditsPage() {
   useEffect(() => {
     fetchSubscription();
   }, []);
+
+  // Surface checkout cancellation when Stripe redirects back to /dashboard/credits?checkout=cancelled
+  useEffect(() => {
+    if (params.get("checkout") === "cancelled") {
+      showToast("Checkout cancelled. No charge was made.", "error");
+    }
+  }, [params]);
 
   async function fetchSubscription() {
     try {
@@ -65,19 +74,11 @@ export default function CreditsPage() {
         body: JSON.stringify({ blockId }),
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        const block = CREDIT_BLOCKS.find((b) => b.id === blockId);
-        const modeLabel = data.mode === "simulated" ? " (simulated)" : "";
-        showToast(`Added ${data.minutesAdded} minutes to your account${modeLabel}`, "success");
-        // Refresh subscription info
-        setSub((prev) =>
-          prev
-            ? { ...prev, minutesIncluded: data.newTotal }
-            : prev
-        );
-      } else {
-        showToast(data.error || "Purchase failed", "error");
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
       }
+      showToast(data.error || "Could not start checkout", "error");
     } catch {
       showToast("Something went wrong", "error");
     } finally {
@@ -238,7 +239,7 @@ export default function CreditsPage() {
       {/* Info footer */}
       <div className="mt-8 text-center text-sm text-muted">
         <p>Credit blocks are added to your current subscription and never expire during your billing period.</p>
-        <p className="mt-1">Payments are processed securely through Manifest Financial.</p>
+        <p className="mt-1">Payments are processed securely.</p>
       </div>
 
       {/* Toast */}
@@ -262,5 +263,22 @@ export default function CreditsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CreditsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <svg className="w-8 h-8 text-accent animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+        </div>
+      }
+    >
+      <CreditsInner />
+    </Suspense>
   );
 }
