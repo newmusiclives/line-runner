@@ -93,10 +93,10 @@ export default function PerformanceCoachPanel({
   if (loading) {
     return (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
-        <div className="bg-surface border border-border rounded-2xl w-full max-w-lg p-8 text-center">
+        <div className="bg-surface border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg p-8 text-center">
           <div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-muted">Analyzing your performance...</p>
         </div>
@@ -107,10 +107,10 @@ export default function PerformanceCoachPanel({
   if (notes.length === 0) {
     return (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
-        <div className="bg-surface border border-border rounded-2xl w-full max-w-lg p-8 text-center">
+        <div className="bg-surface border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg p-8 text-center">
           <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
               className="w-8 h-8 text-success"
@@ -147,10 +147,10 @@ export default function PerformanceCoachPanel({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <div className="bg-surface border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[90dvh] sm:max-h-[85dvh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
             <h2 className="text-xl font-bold">AI Performance Coach</h2>
@@ -173,7 +173,7 @@ export default function PerformanceCoachPanel({
             )}
             <button
               onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-light text-muted hover:text-foreground transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-surface-light text-muted hover:text-foreground transition-colors"
             >
               <svg
                 className="w-5 h-5"

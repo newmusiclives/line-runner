@@ -129,7 +129,7 @@ export default function DashboardLayout({
   if (status === "unauthenticated") return null;
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
+    <div className="flex min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100dvh-4rem)]">
       {/* Sidebar */}
       <aside className="w-64 bg-surface border-r border-border shrink-0 hidden md:block">
         <div className="p-6">
@@ -170,34 +170,36 @@ export default function DashboardLayout({
       </aside>
 
       {/* Mobile nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border z-40 flex">
-        {sidebarLinks.map((link) => {
-          const active = pathname === link.href;
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs transition-colors ${
-                active ? "text-accent-light" : "text-muted"
-              }`}
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur border-t border-border z-40 safe-pb">
+        <div className="flex overflow-x-auto scrollbar-hide">
+          {sidebarLinks.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex-1 min-w-[4.5rem] flex flex-col items-center gap-0.5 py-2.5 px-2 text-[10px] transition-colors ${
+                  active ? "text-accent-light" : "text-muted"
+                }`}
               >
-                {link.icon}
-              </svg>
-              {link.label}
-            </Link>
-          );
-        })}
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  {link.icon}
+                </svg>
+                <span className="truncate max-w-full">{link.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Main content */}
-      <main className="flex-1 p-6 md:p-8 pb-24 md:pb-8 overflow-auto">
+      <main className="flex-1 p-4 sm:p-6 md:p-8 pb-24 md:pb-8 overflow-auto safe-px">
         {children}
       </main>
     </div>

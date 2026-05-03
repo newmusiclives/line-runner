@@ -17,7 +17,10 @@ export default function TeleprompterMode({
   isPaused,
 }: TeleprompterModeProps) {
   const [scrollSpeed, setScrollSpeed] = useState(30); // pixels per second
-  const [fontSize, setFontSize] = useState(36);
+  const [fontSize, setFontSize] = useState(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 640) return 28;
+    return 36;
+  });
   const [mirrorMode, setMirrorMode] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -77,7 +80,7 @@ export default function TeleprompterMode({
       {/* Scrolling content */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto scrollbar-hide px-8"
+        className="flex-1 overflow-y-auto scrollbar-hide px-4 sm:px-8"
         style={{ scrollBehavior: "auto" }}
       >
         {/* Top spacer */}
@@ -116,7 +119,7 @@ export default function TeleprompterMode({
 
       {/* Controls overlay */}
       <div
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-6 py-6 z-20 transition-opacity duration-500 ${
+        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-4 sm:px-6 py-5 sm:py-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] z-20 transition-opacity duration-500 ${
           showControls ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         style={{ transform: mirrorMode ? "scaleX(-1)" : "none" }}

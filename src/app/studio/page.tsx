@@ -78,15 +78,15 @@ export default function StudioDashboardPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Line Runner STUDIO</h1>
-          <p className="text-muted mt-1">Your complete creative business dashboard</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Line Runner STUDIO</h1>
+          <p className="text-muted mt-1 text-sm sm:text-base">Your complete creative business dashboard</p>
         </div>
-        <div className="flex bg-surface border border-border rounded-xl p-1">
+        <div className="flex bg-surface border border-border rounded-xl p-1 self-start sm:self-auto">
           {(["month", "quarter", "year"] as const).map((t) => (
-            <button key={t} onClick={() => setTimeRange(t)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${timeRange === t ? "bg-accent text-white" : "text-muted hover:text-foreground"}`}>
+            <button key={t} onClick={() => setTimeRange(t)} className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${timeRange === t ? "bg-accent text-white" : "text-muted hover:text-foreground"}`}>
               {t}
             </button>
           ))}
@@ -94,22 +94,22 @@ export default function StudioDashboardPage() {
       </div>
 
       {/* Top Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <div className="bg-surface border border-border rounded-xl p-5">
           <div className="text-sm text-muted mb-1">Total Earnings</div>
-          <div className="text-3xl font-bold text-success">${data.totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="text-2xl sm:text-3xl font-bold text-success">${data.totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div className="bg-surface border border-border rounded-xl p-5">
           <div className="text-sm text-muted mb-1">This {timeRange === "month" ? "Month" : timeRange === "quarter" ? "Quarter" : "Year"}</div>
-          <div className="text-3xl font-bold text-accent-light">${data.periodEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="text-2xl sm:text-3xl font-bold text-accent-light">${data.periodEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div className="bg-surface border border-border rounded-xl p-5">
           <div className="text-sm text-muted mb-1">Fan Growth</div>
-          <div className="text-3xl font-bold text-foreground">+{data.analytics.fanGrowth}</div>
+          <div className="text-2xl sm:text-3xl font-bold text-foreground">+{data.analytics.fanGrowth}</div>
         </div>
         <div className="bg-surface border border-border rounded-xl p-5">
           <div className="text-sm text-muted mb-1">Content Views</div>
-          <div className="text-3xl font-bold text-foreground">{data.analytics.contentViews.toLocaleString()}</div>
+          <div className="text-2xl sm:text-3xl font-bold text-foreground">{data.analytics.contentViews.toLocaleString()}</div>
         </div>
       </div>
 

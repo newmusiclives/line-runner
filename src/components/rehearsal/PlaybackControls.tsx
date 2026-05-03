@@ -32,13 +32,13 @@ export default function PlaybackControls({
   totalLines,
 }: PlaybackControlsProps) {
   return (
-    <div className="bg-surface border-t border-border px-4 py-4">
+    <div className="bg-surface border-t border-border px-3 sm:px-4 py-3 sm:py-4 safe-pb">
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
           {/* Restart */}
           <button
             onClick={onRestart}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors"
+            className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors shrink-0"
             title="Restart"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -49,7 +49,7 @@ export default function PlaybackControls({
           {/* Previous */}
           <button
             onClick={onPrevLine}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors"
+            className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors shrink-0"
             title="Previous line"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -64,7 +64,7 @@ export default function PlaybackControls({
               else if (isPlaying && !isPaused) onPause();
               else if (isPaused) onResume();
             }}
-            className="w-14 h-14 flex items-center justify-center rounded-full bg-accent hover:bg-accent-dark transition-colors shadow-lg shadow-accent/25"
+            className="w-14 h-14 flex items-center justify-center rounded-full bg-accent hover:bg-accent-dark transition-colors shadow-lg shadow-accent/25 shrink-0"
             title={isPlaying && !isPaused ? "Pause" : "Play"}
           >
             {isPlaying && !isPaused ? (
@@ -81,7 +81,7 @@ export default function PlaybackControls({
           {/* Next */}
           <button
             onClick={onNextLine}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors"
+            className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors shrink-0"
             title="Next line"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -92,7 +92,7 @@ export default function PlaybackControls({
           {/* Stop */}
           <button
             onClick={onStop}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-danger/20 hover:text-danger transition-colors"
+            className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-danger/20 hover:text-danger transition-colors shrink-0"
             title="Stop"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -103,7 +103,7 @@ export default function PlaybackControls({
           {/* Timing */}
           <button
             onClick={onOpenTiming}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors"
+            className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors shrink-0"
             title="Timing settings"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -114,7 +114,7 @@ export default function PlaybackControls({
           {/* Remote Control */}
           <button
             onClick={onOpenRemote}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors"
+            className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-surface-light hover:bg-border transition-colors shrink-0"
             title="Remote control"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

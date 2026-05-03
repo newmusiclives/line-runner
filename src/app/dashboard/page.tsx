@@ -119,16 +119,16 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold">My Scripts</h1>
-          <p className="text-muted mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold">My Scripts</h1>
+          <p className="text-muted mt-1 text-sm sm:text-base">
             Welcome back, {session?.user?.name || "there"}
           </p>
         </div>
         <Link
           href="/upload"
-          className="bg-accent hover:bg-accent-dark text-white font-medium px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+          className="bg-accent hover:bg-accent-dark text-white font-medium px-5 py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 self-start sm:self-auto"
         >
           <svg
             className="w-5 h-5"
@@ -148,7 +148,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[
           {
             label: "Total Scripts",
@@ -188,7 +188,7 @@ export default function DashboardPage() {
 
       {/* Scripts Grid */}
       {scripts.length === 0 ? (
-        <div className="bg-surface border border-border rounded-2xl p-16 text-center">
+        <div className="bg-surface border border-border rounded-2xl p-8 sm:p-16 text-center">
           <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <svg
               className="w-8 h-8 text-accent-light"
@@ -216,7 +216,7 @@ export default function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-10">
           {scripts.map((script) => (
             <div
               key={script.id}

@@ -8,7 +8,10 @@ export default function TeleprompterPage() {
   const router = useRouter();
   const [session, setSession] = useState<RehearsalSession | null>(null);
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [fontSize, setFontSize] = useState(48);
+  const [fontSize, setFontSize] = useState(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 640) return 28;
+    return 48;
+  });
   const [mirrorMode, setMirrorMode] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,9 +35,13 @@ export default function TeleprompterPage() {
     hideControlsTimer.current = setTimeout(() => setShowControls(false), 3000);
   }, []);
 
+  // Initial countdown — do not call setState synchronously in effect body
   useEffect(() => {
-    resetControlsTimer();
-  }, [resetControlsTimer]);
+    hideControlsTimer.current = setTimeout(() => setShowControls(false), 3000);
+    return () => {
+      if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
+    };
+  }, []);
 
   // Keyboard controls
   useEffect(() => {
@@ -87,12 +94,15 @@ export default function TeleprompterPage() {
       onMouseMove={resetControlsTimer}
     >
       {/* Cue Light */}
-      <div className="absolute top-8 left-1/2 -translate-x-1/2 z-50">
-        <div className={`w-16 h-16 rounded-full ${cueColor} shadow-[0_0_60px]`} />
+      <div
+        className="absolute left-1/2 -translate-x-1/2 z-50"
+        style={{ top: "max(2rem, env(safe-area-inset-top))" }}
+      >
+        <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full ${cueColor} shadow-[0_0_60px]`} />
       </div>
 
       {/* Script Lines — 3 line display */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8 gap-4 sm:gap-6 pt-20 sm:pt-24">
         {/* Previous line */}
         <div className="opacity-30 text-center max-w-4xl transition-all duration-500" style={{ fontSize: fontSize * 0.6 }}>
           {prevLine && (
@@ -110,13 +120,13 @@ export default function TeleprompterPage() {
           }`}
           style={{ fontSize }}
         >
-          <div className="text-lg uppercase tracking-widest mb-3 opacity-60">
+          <div className="text-sm sm:text-lg uppercase tracking-widest mb-2 sm:mb-3 opacity-60">
             {currLine?.character}
             {isMyCurrent && " (YOU)"}
           </div>
           <div className="leading-tight">{currLine?.text}</div>
           {isMyCurrent && (
-            <div className="mt-4 text-lg text-green-400/70 animate-pulse">
+            <div className="mt-3 sm:mt-4 text-sm sm:text-lg text-green-400/70 animate-pulse">
               Your line — speak now
             </div>
           )}
@@ -143,57 +153,78 @@ export default function TeleprompterPage() {
 
       {/* Controls overlay — auto-hides */}
       <div
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-8 transition-opacity duration-500 ${
+        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4 sm:p-8 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-500 ${
           showControls ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         style={{ transform: mirrorMode ? "scaleX(-1)" : "none" }}
       >
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex items-center justify-between sm:justify-start gap-4">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 try { document.exitFullscreen(); } catch {}
                 router.back();
               }}
-              className="text-white/60 hover:text-white text-base"
+              className="text-white/70 hover:text-white text-base font-medium tap-target px-3 -ml-3 rounded-lg flex items-center"
             >
               Exit
             </button>
-            <span className="text-white/40 text-base">
+            <span className="text-white/40 text-sm sm:text-base">
               {currentIdx + 1} / {dialogueLines.length}
             </span>
+            <div className="flex gap-2 sm:hidden ml-auto">
+              <button
+                onClick={(e) => { e.stopPropagation(); setCurrentIdx((p) => Math.max(0, p - 1)); }}
+                className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                aria-label="Previous line"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setCurrentIdx((p) => Math.min(dialogueLines.length - 1, p + 1)); }}
+                className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                aria-label="Next line"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 text-white/60 text-base">
+          <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 flex-wrap">
+            <label className="flex items-center gap-2 text-white/70 text-sm sm:text-base">
               <input
                 type="checkbox"
                 checked={mirrorMode}
                 onChange={(e) => { e.stopPropagation(); setMirrorMode(!mirrorMode); }}
-                className="accent-accent"
+                className="accent-accent w-4 h-4"
               />
               Mirror
             </label>
-            <div className="flex items-center gap-2 text-white/60 text-base">
+            <div className="flex items-center gap-2 text-white/70 text-sm sm:text-base flex-1 sm:flex-initial">
               <span>Aa</span>
               <input
                 type="range"
-                min={32}
+                min={20}
                 max={96}
                 value={fontSize}
                 onChange={(e) => { e.stopPropagation(); setFontSize(parseInt(e.target.value)); }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-24 accent-accent"
+                className="flex-1 sm:w-24 accent-accent"
               />
-              <span className="text-lg font-bold">Aa</span>
+              <span className="text-base sm:text-lg font-bold">Aa</span>
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="hidden sm:flex gap-2">
             <button
               onClick={(e) => { e.stopPropagation(); setCurrentIdx((p) => Math.max(0, p - 1)); }}
               className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+              aria-label="Previous line"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -202,6 +233,7 @@ export default function TeleprompterPage() {
             <button
               onClick={(e) => { e.stopPropagation(); setCurrentIdx((p) => Math.min(dialogueLines.length - 1, p + 1)); }}
               className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+              aria-label="Next line"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />

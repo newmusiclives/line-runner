@@ -27,7 +27,7 @@ export function DirectorNoteIcon({ note }: { note: DirectorNoteItem }) {
       </button>
 
       {open && (
-        <div className="absolute z-50 bottom-8 left-0 w-72 bg-surface border border-border rounded-xl p-4 shadow-xl">
+        <div className="absolute z-50 bottom-8 left-0 w-[min(18rem,calc(100vw-2rem))] bg-surface border border-border rounded-xl p-4 shadow-xl">
           <div className="flex items-center gap-2 mb-2">
             <span className={`text-xs font-bold uppercase tracking-wider ${CATEGORY_COLORS[note.category] || "text-accent-light"}`}>
               {note.category}

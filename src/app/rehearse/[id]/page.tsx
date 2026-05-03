@@ -688,34 +688,33 @@ export default function RehearsePage({
   // Sleep learning renders as a fixed overlay, so it doesn't need special layout handling
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-[calc(100dvh-3.5rem)] md:h-[calc(100dvh-4rem)]">
       {/* Header Bar */}
-      <div className="bg-surface border-b border-border px-4 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="font-semibold">{session.script.title}</h1>
-            <p className="text-sm text-muted">
-              Playing as <span className="text-success font-medium">{session.myCharacter}</span>
-              {" "}&middot; Line {currentLineIndex + 1} of {dialogueLines.length}
+      <div className="bg-surface border-b border-border px-3 sm:px-4 py-2 sm:py-3">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="font-semibold text-base sm:text-lg truncate">{session.script.title}</h1>
+            <p className="text-xs sm:text-sm text-muted truncate">
+              <span className="hidden sm:inline">Playing as </span>
+              <span className="text-success font-medium">{session.myCharacter}</span>
+              {" "}&middot; Line {currentLineIndex + 1}/{dialogueLines.length}
               {mode !== "standard" && <span className="ml-2 text-accent-light capitalize">({mode.replace("-", " ")})</span>}
               {isPaused && <span className="ml-2 text-warning">(Paused)</span>}
-              {wildcardModifier && mode === "wildcard" && <span className="ml-2 text-warning">Modifier: {wildcardModifier}</span>}
+              {wildcardModifier && mode === "wildcard" && <span className="ml-2 text-warning truncate">{wildcardModifier}</span>}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-muted">
-              <label className="flex items-center gap-1.5 cursor-pointer">
-                <input type="checkbox" checked={autoAdvance} onChange={(e) => setAutoAdvance(e.target.checked)} className="accent-accent" />
-                Auto
-              </label>
-            </div>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <label className="flex items-center gap-1.5 text-xs sm:text-sm text-muted cursor-pointer">
+              <input type="checkbox" checked={autoAdvance} onChange={(e) => setAutoAdvance(e.target.checked)} className="accent-accent w-4 h-4" />
+              Auto
+            </label>
             <button onClick={() => setShowModeSelector(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors text-muted hover:text-foreground">
               Mode
             </button>
             <button onClick={() => setShowTimingControls(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors text-muted hover:text-foreground">
               Timing
             </button>
-            <button onClick={() => router.push("/upload")} className="text-xs text-muted hover:text-foreground">New Script</button>
+            <button onClick={() => router.push("/upload")} className="text-xs text-muted hover:text-foreground">New</button>
           </div>
         </div>
         <div className="max-w-5xl mx-auto mt-2">
@@ -727,8 +726,8 @@ export default function RehearsePage({
 
       {/* Feature Toolbar */}
       {showToolbar && (
-        <div className="bg-surface/50 border-b border-border px-4 py-2">
-          <div className="max-w-5xl mx-auto flex items-center gap-2 overflow-x-auto">
+        <div className="bg-surface/50 border-b border-border px-3 sm:px-4 py-2">
+          <div className="max-w-5xl mx-auto flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
             <button onClick={() => analysis && setShowAnalysis(true)} className="text-xs bg-surface-light hover:bg-border px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
               Analysis
             </button>

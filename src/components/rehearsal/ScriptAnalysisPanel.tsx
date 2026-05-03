@@ -19,14 +19,14 @@ export default function ScriptAnalysisPanel({ analysis, onClose }: ScriptAnalysi
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-surface border border-border rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-surface border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-3xl max-h-[90dvh] sm:max-h-[85dvh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
             <h2 className="text-xl font-bold">Script Analysis</h2>
             <p className="text-sm text-muted">AI-powered breakdown of your script</p>
           </div>
-          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-light text-muted hover:text-foreground transition-colors">
+          <button onClick={onClose} className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-surface-light text-muted hover:text-foreground transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
             </svg>

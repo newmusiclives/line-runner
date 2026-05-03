@@ -40,14 +40,14 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="flex min-h-[calc(100dvh-10rem)] items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md space-y-6 sm:space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-          <p className="mt-2 text-muted">Sign in to your Line Runner account</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome back</h1>
+          <p className="mt-2 text-muted text-sm sm:text-base">Sign in to your Line Runner account</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-surface p-8 space-y-6">
+        <div className="rounded-xl border border-border bg-surface p-5 sm:p-8 space-y-5 sm:space-y-6">
           {error && (
             <div className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
               {error}
@@ -136,9 +136,9 @@ function LoginForm() {
         </div>
 
         {/* Demo Quick Login */}
-        <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
-          <p className="text-base text-muted text-center font-medium">Try the Demo</p>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="rounded-xl border border-border bg-surface p-5 sm:p-6 space-y-4">
+          <p className="text-sm sm:text-base text-muted text-center font-medium">Try the Demo</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <button
               onClick={async () => {
                 setLoading(true);

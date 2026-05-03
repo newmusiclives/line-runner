@@ -32,12 +32,66 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  /* Disable iOS auto-resize when rotating */
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.6;
+  /* Prevent rubber-band horizontal scroll on iOS */
+  overflow-x: hidden;
+  /* Don't double-tap zoom on touch UIs */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: 18px;
+  }
+}
+
+/* Safe-area helpers for notched phones / Capacitor wraps */
+.safe-pt { padding-top: env(safe-area-inset-top); }
+.safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+.safe-px {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Prevent inputs zooming the viewport on iOS Safari */
+@supports (-webkit-touch-callout: none) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Min touch-target helper (Apple HIG = 44px) */
+.tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Hide scrollbar but keep scrolling (used in toolbars / teleprompter) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* Custom scrollbar */

@@ -238,13 +238,13 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
+    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
       {/* Progress Steps */}
-      <div className="flex items-center justify-center gap-2 mb-12">
+      <div className="flex items-center justify-center gap-1 sm:gap-2 mb-8 sm:mb-12">
         {(["upload", "characters", "voices"] as Step[]).map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-base font-medium transition-colors ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm sm:text-base font-medium transition-colors shrink-0 ${
                 step === s
                   ? "bg-accent text-white"
                   : i < ["upload", "characters", "voices"].indexOf(step)
@@ -261,7 +261,7 @@ export default function UploadPage() {
               )}
             </div>
             <span
-              className={`text-base hidden sm:inline ${step === s ? "text-foreground font-medium" : "text-muted"}`}
+              className={`text-sm sm:text-base hidden sm:inline ${step === s ? "text-foreground font-medium" : "text-muted"}`}
             >
               {s === "upload"
                 ? "Upload"
@@ -269,8 +269,13 @@ export default function UploadPage() {
                   ? "Pick Your Part"
                   : "Assign Voices"}
             </span>
+            <span
+              className={`text-xs sm:hidden ${step === s ? "text-foreground font-medium" : "text-muted"}`}
+            >
+              {s === "upload" ? "Upload" : s === "characters" ? "Part" : "Voices"}
+            </span>
             {i < 2 && (
-              <div className="w-12 h-px bg-border mx-2" />
+              <div className="w-6 sm:w-12 h-px bg-border mx-1 sm:mx-2" />
             )}
           </div>
         ))}
@@ -279,7 +284,7 @@ export default function UploadPage() {
       {/* Step 1: Upload */}
       {step === "upload" && (
         <div>
-          <h1 className="text-3xl font-bold text-center mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2">
             Upload your script
           </h1>
           <p className="text-muted text-center mb-8">
@@ -293,7 +298,7 @@ export default function UploadPage() {
             }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-2xl p-16 text-center transition-all cursor-pointer ${
+            className={`border-2 border-dashed rounded-2xl p-8 sm:p-16 text-center transition-all cursor-pointer ${
               dragOver
                 ? "border-accent bg-accent/5"
                 : "border-border hover:border-accent/50 hover:bg-surface"
@@ -392,14 +397,14 @@ ROMEO: A thousand times the worse, to want thy light. Love goes toward love, as 
       {/* Step 2: Character Selection */}
       {step === "characters" && script && (
         <div>
-          <h1 className="text-3xl font-bold text-center mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2">
             Pick your part
           </h1>
           <p className="text-muted text-center mb-2">
             Select the character you want to rehearse as
           </p>
-          <div className="flex items-center justify-center gap-4 mb-8 text-base text-muted">
-            <span className="bg-surface-light px-3 py-1 rounded-full">
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-6 sm:mb-8 text-xs sm:text-sm text-muted">
+            <span className="bg-surface-light px-3 py-1 rounded-full max-w-full truncate">
               {script.title}
             </span>
             <span className="bg-surface-light px-3 py-1 rounded-full">
@@ -413,7 +418,7 @@ ROMEO: A thousand times the worse, to want thy light. Love goes toward love, as 
             </span>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {script.characters.map((char) => (
               <button
                 key={char.name}
@@ -460,7 +465,7 @@ ROMEO: A thousand times the worse, to want thy light. Love goes toward love, as 
       {/* Step 3: Voice Assignment */}
       {step === "voices" && script && (
         <div>
-          <h1 className="text-3xl font-bold text-center mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2">
             Assign voices
           </h1>
           <p className="text-muted text-center mb-8">

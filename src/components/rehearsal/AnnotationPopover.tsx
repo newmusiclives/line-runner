@@ -63,7 +63,10 @@ export function AnnotationPopover({ lineId, scriptId, existingNotes = [], onSave
       </button>
 
       {open && (
-        <div className="absolute z-50 top-6 left-0 w-80 bg-surface border border-border rounded-xl p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="absolute z-50 top-6 left-0 w-[min(20rem,calc(100vw-2rem))] bg-surface border border-border rounded-xl p-4 shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex gap-1.5 mb-3">
             {NOTE_TYPES.map((t) => (
               <button

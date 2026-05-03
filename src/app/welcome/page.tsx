@@ -106,24 +106,24 @@ export default function WelcomePage() {
   const firstName = session?.user?.name?.split(" ")[0] || "there";
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12 md:py-16">
-      <div className="text-center mb-10">
-        <span className="inline-block bg-success/15 text-success text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
+    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12 md:py-16">
+      <div className="text-center mb-8 sm:mb-10">
+        <span className="inline-block bg-success/15 text-success text-[11px] sm:text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
           You&apos;re on the Free plan
         </span>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3 leading-tight">
           Welcome to Line Runner, {firstName}
         </h1>
-        <p className="text-muted text-lg max-w-2xl mx-auto">
+        <p className="text-muted text-base sm:text-lg max-w-2xl mx-auto">
           Here&apos;s exactly what you can do right now — and what unlocks if you upgrade later.
           No credit card needed to keep using Free.
         </p>
       </div>
 
       {/* What's included */}
-      <section className="mb-12">
-        <h2 className="text-xl font-semibold mb-5">What&apos;s included on Free</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
+      <section className="mb-10 sm:mb-12">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-5">What&apos;s included on Free</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {FREE_FEATURES.map((f) => (
             <div
               key={f.title}
@@ -223,22 +223,22 @@ export default function WelcomePage() {
       </section>
 
       {/* Get started CTA */}
-      <section className="text-center bg-surface border border-border rounded-2xl p-8 md:p-10">
-        <h2 className="text-2xl font-bold mb-2">Ready to rehearse?</h2>
-        <p className="text-muted mb-6 max-w-xl mx-auto">
+      <section className="text-center bg-surface border border-border rounded-2xl p-6 sm:p-8 md:p-10">
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">Ready to rehearse?</h2>
+        <p className="text-muted text-sm sm:text-base mb-5 sm:mb-6 max-w-xl mx-auto">
           Upload a script (or try the built-in Romeo &amp; Juliet sample). We&apos;ll parse it,
           let you pick your part, and give every other character an AI voice.
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-xs sm:max-w-none mx-auto">
           <Link
             href="/upload"
-            className="bg-accent hover:bg-accent-dark text-white font-semibold px-8 py-3.5 rounded-xl transition-colors"
+            className="bg-accent hover:bg-accent-dark text-white font-semibold px-6 sm:px-8 py-3.5 rounded-xl transition-colors text-center"
           >
             Upload your first script
           </Link>
           <Link
             href="/dashboard"
-            className="text-muted hover:text-foreground font-medium px-6 py-3 transition-colors"
+            className="text-muted hover:text-foreground font-medium px-6 py-3 transition-colors text-center"
           >
             Skip to dashboard
           </Link>

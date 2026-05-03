@@ -51,18 +51,18 @@ export default function TimingControls({ settings, onChange, onClose }: TimingCo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-surface border border-border rounded-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-surface border border-border w-full max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto safe-pb">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border sticky top-0 bg-surface z-10">
           <h2 className="text-lg font-bold text-foreground">Timing &amp; Speed</h2>
-          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-light text-muted hover:text-foreground transition-colors">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <button onClick={onClose} className="tap-target flex items-center justify-center rounded-full hover:bg-surface-light text-muted hover:text-foreground transition-colors -mr-2">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="p-6 space-y-8">
+        <div className="p-5 sm:p-6 space-y-7 sm:space-y-8">
           {/* Pause Duration */}
           <div>
             <div className="flex items-center justify-between mb-3">

@@ -42,13 +42,13 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl sm:text-5xl font-bold mb-4">Simple, transparent pricing</h1>
-        <p className="text-muted text-xl max-w-2xl mx-auto mb-2">
+    <div className="max-w-6xl mx-auto px-4 py-10 sm:py-16">
+      <div className="text-center mb-10 sm:mb-12">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">Simple, transparent pricing</h1>
+        <p className="text-muted text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-2">
           Every plan is based on credits. 1 credit = 1 character of AI-generated dialogue. ~1,000 credits = ~1 minute of audio.
         </p>
-        <p className="text-muted text-lg">Start free. Upgrade when you&apos;re ready. Cancel anytime.</p>
+        <p className="text-muted text-sm sm:text-lg">Start free. Upgrade when you&apos;re ready. Cancel anytime.</p>
       </div>
 
       {(cancelled || error) && (
@@ -67,9 +67,9 @@ export default function PricingPage() {
       )}
 
       {/* Plans Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto mb-16">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 max-w-6xl mx-auto mb-12 sm:mb-16">
         {/* Free */}
-        <div className="bg-surface border border-border rounded-2xl p-7 flex flex-col">
+        <div className="bg-surface border border-border rounded-2xl p-5 sm:p-7 flex flex-col">
           <h3 className="text-2xl font-bold mb-1">Free</h3>
           <p className="text-sm text-muted mb-5">Try Line Runner — no credit card required</p>
           <div className="text-4xl font-bold mb-1">$0</div>
@@ -98,7 +98,7 @@ export default function PricingPage() {
         </div>
 
         {/* Pro */}
-        <div className="bg-surface border-2 border-accent rounded-2xl p-7 flex flex-col relative shadow-lg shadow-accent/10">
+        <div className="bg-surface border-2 border-accent rounded-2xl p-5 sm:p-7 flex flex-col relative shadow-lg shadow-accent/10">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold px-4 py-1 rounded-full">MOST POPULAR</div>
           <h3 className="text-2xl font-bold mb-1">Pro</h3>
           <p className="text-sm text-muted mb-5">For working actors who rehearse regularly</p>
@@ -138,7 +138,7 @@ export default function PricingPage() {
         </div>
 
         {/* Studio */}
-        <div className="bg-surface border border-border rounded-2xl p-7 flex flex-col">
+        <div className="bg-surface border border-border rounded-2xl p-5 sm:p-7 flex flex-col">
           <h3 className="text-2xl font-bold mb-1">Studio</h3>
           <p className="text-sm text-muted mb-5">For professional actors and voice artists</p>
           <div className="text-4xl font-bold mb-1">$70</div>
@@ -177,7 +177,7 @@ export default function PricingPage() {
         </div>
 
         {/* Enterprise */}
-        <div className="bg-surface border border-border rounded-2xl p-7 flex flex-col bg-gradient-to-b from-warning/5 to-transparent">
+        <div className="bg-surface border border-border rounded-2xl p-5 sm:p-7 flex flex-col bg-gradient-to-b from-warning/5 to-transparent">
           <h3 className="text-2xl font-bold mb-1">Enterprise</h3>
           <p className="text-sm text-muted mb-5">For stage schools, theatre companies, and organisations</p>
           <div className="text-4xl font-bold mb-1">Custom</div>
@@ -235,7 +235,7 @@ export default function PricingPage() {
       </div>
 
       {/* Credits Explainer */}
-      <div className="max-w-3xl mx-auto bg-surface border border-border rounded-2xl p-8 mb-16">
+      <div className="max-w-3xl mx-auto bg-surface border border-border rounded-2xl p-5 sm:p-8 mb-16">
         <h2 className="text-2xl font-bold text-center mb-6">How credits work</h2>
         <div className="grid sm:grid-cols-3 gap-6 text-center mb-6">
           <div>
@@ -304,7 +304,7 @@ export default function PricingPage() {
       </div>
 
       {/* Enterprise CTA */}
-      <div className="max-w-3xl mx-auto bg-gradient-to-r from-warning/5 to-accent/5 border border-border rounded-2xl p-8 flex flex-col md:flex-row items-center gap-6 mb-16">
+      <div className="max-w-3xl mx-auto bg-gradient-to-r from-warning/5 to-accent/5 border border-border rounded-2xl p-5 sm:p-8 flex flex-col md:flex-row items-center gap-6 mb-16">
         <div className="flex-1">
           <h2 className="text-2xl font-bold mb-2">Stage schools & theatre companies</h2>
           <p className="text-muted">Volume pricing, multi-seat admin, student accounts, Director&apos;s Cut for teacher-student collaboration, custom VO curriculum, and co-branded options. Annual invoicing available.</p>

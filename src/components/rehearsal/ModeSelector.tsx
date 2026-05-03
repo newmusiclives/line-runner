@@ -169,10 +169,10 @@ export default function ModeSelector({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
       onClick={handleBackdropClick}
     >
-      <div className="bg-surface border border-border rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto">
+      <div className="bg-surface border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-3xl max-h-[90dvh] sm:max-h-[85dvh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-xl font-bold text-foreground">
@@ -181,7 +181,7 @@ export default function ModeSelector({
           {onClose && (
             <button
               onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-light text-muted hover:text-foreground transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-surface-light text-muted hover:text-foreground transition-colors"
             >
               <svg
                 className="w-5 h-5"
