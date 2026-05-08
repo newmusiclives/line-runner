@@ -147,6 +147,35 @@ export default function DashboardPage() {
         </Link>
       </div>
 
+      {/* Free-tier upload-limit hint — shown when free user already has at least one script */}
+      {(!subscription || subscription.planId === "free" || subscription.status !== "active") && scripts.length >= 1 && (
+        <div className="mb-6 sm:mb-8 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-start gap-3">
+          <svg className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-foreground">
+              <span className="font-semibold">You&apos;re at your free upload limit.</span>{" "}
+              <span className="text-muted">Subscribe to Pro ($20/mo, 110 minutes) for unlimited uploads, or buy a $5 credit block.</span>
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Link
+                href="/pricing"
+                className="inline-block px-3 py-1.5 bg-accent text-white text-xs font-medium rounded-md hover:bg-accent-dark transition-colors"
+              >
+                See plans
+              </Link>
+              <Link
+                href="/dashboard/credits"
+                className="inline-block px-3 py-1.5 bg-surface-light text-foreground text-xs font-medium rounded-md hover:bg-border transition-colors"
+              >
+                Buy credit block
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[

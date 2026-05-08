@@ -189,14 +189,22 @@ export class BrowserVoiceEngine {
   }
 }
 
-// Factory: fetch config and return the best available engine
-export async function createVoiceEngine(): Promise<BrowserVoiceEngine | GeminiVoiceEngine> {
+// Factory: fetch config and return the best available engine.
+// Pass `demoSceneId` to play pre-recorded audio for a famous-scene demo —
+// this skips the server entirely (no auth, no credits) and reads from
+// /public/demo-audio/<sceneId>/.
+export async function createVoiceEngine(
+  opts?: { demoSceneId?: string }
+): Promise<BrowserVoiceEngine | GeminiVoiceEngine | DemoVoiceEngine> {
+  if (opts?.demoSceneId) {
+    return new DemoVoiceEngine(opts.demoSceneId);
+  }
   try {
     const res = await fetch("/api/voice/config");
     if (res.ok) {
-      const { engine, apiKey } = await res.json();
-      if (engine === "gemini" && apiKey) {
-        return new GeminiVoiceEngine(apiKey);
+      const { engine } = await res.json();
+      if (engine === "gemini") {
+        return new GeminiVoiceEngine();
       }
     }
   } catch {
@@ -205,16 +213,36 @@ export async function createVoiceEngine(): Promise<BrowserVoiceEngine | GeminiVo
   return new BrowserVoiceEngine();
 }
 
-// Gemini TTS API integration — same speak(text, assignment, onEnd) interface as BrowserVoiceEngine
-export class GeminiVoiceEngine {
-  private apiKey: string;
+// Plays pre-recorded demo audio. Falls back to BrowserVoiceEngine for any
+// line not in the manifest (e.g. emotion-adjusted text variants we didn't
+// pre-record), so the demo never hard-stops.
+export class DemoVoiceEngine {
+  private sceneId: string;
+  private manifestPromise: Promise<void>;
+  private byKey = new Map<string, string>();
   private audioContext: AudioContext | null = null;
   private currentSource: AudioBufferSourceNode | null = null;
   private browserFallback: BrowserVoiceEngine;
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+  constructor(sceneId: string) {
+    this.sceneId = sceneId;
     this.browserFallback = new BrowserVoiceEngine();
+    this.manifestPromise = this.loadManifest();
+  }
+
+  private async loadManifest(): Promise<void> {
+    try {
+      const res = await fetch(`/demo-audio/${this.sceneId}/manifest.json`);
+      if (!res.ok) return;
+      const m = (await res.json()) as {
+        lines: Record<string, { file: string; text: string; voiceId: string }>;
+      };
+      for (const info of Object.values(m.lines)) {
+        this.byKey.set(`${info.voiceId}::${info.text}`, info.file);
+      }
+    } catch {
+      // Manifest absent — every line will fall back to browser TTS
+    }
   }
 
   speak(
@@ -223,7 +251,88 @@ export class GeminiVoiceEngine {
     onEnd?: () => void
   ): null {
     this.speakAsync(text, assignment, onEnd).catch(() => {
-      // Fall back to browser TTS on any Gemini error
+      this.browserFallback.speak(text, assignment, onEnd);
+    });
+    return null;
+  }
+
+  private async speakAsync(
+    text: string,
+    assignment: VoiceAssignment,
+    onEnd?: () => void
+  ): Promise<void> {
+    await this.manifestPromise;
+    const key = `${assignment.voiceId}::${text}`;
+    const file = this.byKey.get(key);
+    if (!file) {
+      throw new Error(`No demo audio for line in scene ${this.sceneId}`);
+    }
+
+    const audioRes = await fetch(`/demo-audio/${this.sceneId}/${file}`);
+    if (!audioRes.ok) {
+      throw new Error(`Demo audio fetch failed: ${audioRes.status}`);
+    }
+    const buffer = await audioRes.arrayBuffer();
+
+    if (!this.audioContext) {
+      this.audioContext = new AudioContext();
+    }
+    const pcm = new Int16Array(buffer);
+    const floats = new Float32Array(pcm.length);
+    for (let i = 0; i < pcm.length; i++) {
+      floats[i] = pcm[i] / 32768;
+    }
+    const audioBuffer = this.audioContext.createBuffer(1, floats.length, 24000);
+    audioBuffer.getChannelData(0).set(floats);
+
+    this.currentSource = this.audioContext.createBufferSource();
+    this.currentSource.buffer = audioBuffer;
+    this.currentSource.playbackRate.value = assignment.rate ?? 1.0;
+    this.currentSource.connect(this.audioContext.destination);
+    if (onEnd) {
+      this.currentSource.addEventListener("ended", onEnd);
+    }
+    this.currentSource.start();
+  }
+
+  stop() {
+    this.currentSource?.stop();
+    this.currentSource = null;
+    this.browserFallback.stop();
+  }
+
+  pause() {
+    this.audioContext?.suspend();
+  }
+
+  resume() {
+    this.audioContext?.resume();
+  }
+}
+
+// Gemini TTS via server proxy — same speak(text, assignment, onEnd) interface as BrowserVoiceEngine.
+// The proxy enforces voice-credit limits and keeps the Gemini API key off the client.
+export class GeminiVoiceEngine {
+  private audioContext: AudioContext | null = null;
+  private currentSource: AudioBufferSourceNode | null = null;
+  private browserFallback: BrowserVoiceEngine;
+
+  constructor() {
+    this.browserFallback = new BrowserVoiceEngine();
+  }
+
+  speak(
+    text: string,
+    assignment: VoiceAssignment,
+    onEnd?: () => void
+  ): null {
+    this.speakAsync(text, assignment, onEnd).catch((err) => {
+      // Out-of-credits and upstream errors both fall back to browser TTS so the
+      // rehearsal flow keeps moving. Credits are already enforced server-side, so
+      // the fallback can't re-trigger Gemini billing.
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("voice:fallback", { detail: { code: err?.code, message: err?.message } }));
+      }
       this.browserFallback.speak(text, assignment, onEnd);
     });
     return null;
@@ -238,34 +347,23 @@ export class GeminiVoiceEngine {
       this.audioContext = new AudioContext();
     }
 
-    const voiceName = assignment.voiceId;
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${this.apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text }] }],
-          generationConfig: {
-            responseModalities: ["AUDIO"],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: { voiceName },
-              },
-            },
-          },
-        }),
-      }
-    );
+    const response = await fetch("/api/voice/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, voiceId: assignment.voiceId }),
+    });
 
     if (!response.ok) {
-      throw new Error(`Gemini TTS API error: ${response.status}`);
+      const body = await response.json().catch(() => ({}));
+      const err = new Error(body?.error || `TTS proxy error: ${response.status}`) as Error & { code?: string; status?: number };
+      err.code = body?.code;
+      err.status = response.status;
+      throw err;
     }
 
-    const data = await response.json();
-    const audioBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    const { audioBase64 } = await response.json();
     if (!audioBase64) {
-      throw new Error("No audio data in Gemini response");
+      throw new Error("No audio data in TTS response");
     }
 
     // Gemini returns L16 PCM at 24000 Hz — decode to AudioBuffer

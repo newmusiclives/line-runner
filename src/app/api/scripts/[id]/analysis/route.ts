@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
 import { getDb } from "@/lib/db";
+import { getScriptById } from "@/lib/db/scripts";
+import { checkFeatureAccess } from "@/lib/subscription-guard";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { analyzeScript } from "@/lib/ai/script-analyzer";
 import { nanoid } from "nanoid";
 import type { ParsedScript } from "@/types";
@@ -8,7 +11,27 @@ import type { ParsedScript } from "@/types";
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // 20 analyses/hour per user. Cached results don't count against the limit (we'd
+  // skip the AI call regardless), but the cap prevents bots from spamming the
+  // first-analysis path that does run analyzeScript.
+  const rl = checkRateLimit(`analysis:${session.user.id}`, 20, 3_600_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many analysis requests. Try again later.", code: "RATE_LIMITED" },
+      { status: 429, headers: { "Retry-After": Math.ceil(rl.resetIn / 1000).toString() } }
+    );
+  }
+
+  const access = await checkFeatureAccess(session.user.id, "script_analysis");
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.reason || "Feature not available" }, { status: 403 });
+  }
+
+  const script = await getScriptById(id);
+  if (!script) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (script.user_id !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const sql = getDb();
 
@@ -33,11 +56,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     });
   }
 
-  // Generate analysis
-  const scriptRows = await sql`SELECT parsed_data FROM scripts WHERE id = ${id}`;
-  if (scriptRows.length === 0) return NextResponse.json({ error: "Script not found" }, { status: 404 });
-
-  const parsed: ParsedScript = JSON.parse(scriptRows[0].parsed_data as string);
+  // Generate analysis (script already loaded for ownership check)
+  const parsed: ParsedScript = JSON.parse(script.parsed_data);
   const analysis = analyzeScript(parsed.lines, parsed.characters);
 
   // Cache analysis

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
 import { ensureTable, getSetting } from "@/lib/db/integrations";
 import { EMAIL_TEMPLATES } from "@/lib/email-templates";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 
 const GHL_BASE = "https://services.leadconnectorhq.com";
 
@@ -109,7 +110,7 @@ async function actionTemplates(apiKey: string, locationId: string) {
           type: "html",
           subject: tpl.subject,
           html: tpl.html,
-          fromEmail: "hello@linerunner.app",
+          fromEmail: SUPPORT_EMAIL,
           fromName: "Line Runner",
         }),
       }

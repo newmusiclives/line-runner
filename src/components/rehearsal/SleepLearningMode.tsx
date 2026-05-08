@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ScriptLine, VoiceAssignment } from "@/types";
-import { BrowserVoiceEngine, GeminiVoiceEngine, createVoiceEngine } from "@/lib/voice-engine";
+import { BrowserVoiceEngine, GeminiVoiceEngine, DemoVoiceEngine, createVoiceEngine } from "@/lib/voice-engine";
 
 interface SleepLearningModeProps {
   lines: ScriptLine[];
@@ -29,7 +29,7 @@ export default function SleepLearningMode({
   const [showCurrentLine, setShowCurrentLine] = useState(true);
   const [textOpacity, setTextOpacity] = useState(1);
   const [showSettings, setShowSettings] = useState(true);
-  const voiceEngineRef = useRef<BrowserVoiceEngine | GeminiVoiceEngine | null>(null);
+  const voiceEngineRef = useRef<BrowserVoiceEngine | GeminiVoiceEngine | DemoVoiceEngine | null>(null);
   const isPlayingRef = useRef(false);
   const timerStartRef = useRef<number>(0);
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

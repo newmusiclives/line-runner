@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 
 export const metadata = {
   title: "Terms of Service — Line Runner",
@@ -123,8 +124,8 @@ export default function TermsPage() {
           <h2 className="text-xl font-semibold mb-2">11. Contact</h2>
           <p className="text-muted">
             Questions about these Terms? Email{" "}
-            <a href="mailto:hello@linerunner.app" className="text-accent-light hover:text-accent underline">
-              hello@linerunner.app
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-accent-light hover:text-accent underline">
+              {SUPPORT_EMAIL}
             </a>
             .
           </p>

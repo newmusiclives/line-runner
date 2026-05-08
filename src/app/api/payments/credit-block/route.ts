@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth/config";
 import { CREDIT_BLOCKS } from "@/lib/manifest-financial";
-import { getActiveSubscription } from "@/lib/db/subscriptions";
+import { ensureActiveSubscription } from "@/lib/db/subscriptions";
 import { getStripe, getAppUrl, isStripeConfigured } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -34,14 +34,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid block" }, { status: 400 });
   }
 
-  // Credit blocks require a paid subscription
-  const sub = await getActiveSubscription(session.user.id);
-  if (!sub || sub.plan_id === "free") {
-    return NextResponse.json(
-      { error: "Credit blocks require a Pro or Studio subscription" },
-      { status: 403 }
-    );
-  }
+  // Credit blocks are pay-as-you-go — available to free users too. The block
+  // minutes are added to whatever subscription row the user has; create a
+  // free-tier row if they're brand new so the webhook has somewhere to credit.
+  const sub = await ensureActiveSubscription(session.user.id);
 
   const stripe = await getStripe();
   const appUrl = getAppUrl();

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
-import { BrowserVoiceEngine, GeminiVoiceEngine, createVoiceEngine } from "@/lib/voice-engine";
+import { BrowserVoiceEngine, GeminiVoiceEngine, DemoVoiceEngine, createVoiceEngine } from "@/lib/voice-engine";
 import { detectAllEmotions, getEmotionVoiceAdjustment, EMOTION_COLORS } from "@/lib/ai/emotion-detector";
 import { generateDirectorNotes } from "@/lib/ai/director-notes";
 import { generatePerformanceNotes } from "@/lib/ai/performance-coach";
@@ -53,7 +53,7 @@ export default function RehearsePage({
   const [isPaused, setIsPaused] = useState(false);
   const [waitingForUser, setWaitingForUser] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
-  const voiceEngineRef = useRef<BrowserVoiceEngine | GeminiVoiceEngine | null>(null);
+  const voiceEngineRef = useRef<BrowserVoiceEngine | GeminiVoiceEngine | DemoVoiceEngine | null>(null);
   const currentLineRef = useRef<HTMLDivElement>(null);
   const isPlayingRef = useRef(false);
   const isPausedRef = useRef(false);
@@ -130,12 +130,15 @@ export default function RehearsePage({
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      createVoiceEngine().then((engine) => {
+      const demoSceneId = routeId.startsWith("demo-")
+        ? routeId.slice("demo-".length)
+        : undefined;
+      createVoiceEngine({ demoSceneId }).then((engine) => {
         voiceEngineRef.current = engine;
       });
     }
     return () => { voiceEngineRef.current?.stop(); };
-  }, []);
+  }, [routeId]);
 
   // Register service worker for PWA
   useEffect(() => {

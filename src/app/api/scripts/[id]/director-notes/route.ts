@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
 import { getScriptById } from "@/lib/db/scripts";
+import { checkFeatureAccess } from "@/lib/subscription-guard";
 import { detectAllEmotions } from "@/lib/ai/emotion-detector";
 import { generateDirectorNotes } from "@/lib/ai/director-notes";
 import type { ParsedScript } from "@/types";
@@ -12,6 +13,11 @@ export async function GET(
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const access = await checkFeatureAccess(session.user.id, "director_notes");
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.reason || "Feature not available" }, { status: 403 });
   }
 
   const { id } = await params;

@@ -5,8 +5,10 @@ import { auth } from "@/lib/auth/config";
 import SessionProvider from "@/components/auth/SessionProvider";
 import TopNav from "@/components/nav/TopNav";
 import SkipNav from "@/components/SkipNav";
+import VoiceFallbackToast from "@/components/VoiceFallbackToast";
 import { AriaLiveProvider } from "@/components/AriaLive";
 import { I18nProvider } from "@/lib/i18n/context";
+import { getStripeMode, isStripeConfigured } from "@/lib/stripe";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -66,6 +68,11 @@ export default async function RootLayout({
         role: (session.user as any).role as string | undefined,
       }
     : null;
+
+  // Surface a "TEST MODE" badge in nav whenever Stripe is configured but in test mode.
+  // Catches the operator's most expensive mistake — soft-launching while Stripe keys are still test.
+  const [stripeMode, stripeReady] = await Promise.all([getStripeMode(), isStripeConfigured()]);
+  const showTestBanner = stripeReady && stripeMode === "test";
   return (
     <html
       lang="en"
@@ -76,8 +83,9 @@ export default async function RootLayout({
         <AriaLiveProvider>
         <I18nProvider>
         <SessionProvider>
-          <TopNav user={user} />
+          <TopNav user={user} stripeTestMode={showTestBanner} />
           <main id="main-content" className="flex-1">{children}</main>
+          <VoiceFallbackToast />
         </SessionProvider>
 
         <footer className="border-t border-border bg-surface/50 py-8 safe-pb safe-px">

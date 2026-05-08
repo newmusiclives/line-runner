@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BILLING_EMAIL } from "@/lib/contact";
 
 export const metadata = {
   title: "Refund Policy — Line Runner",
@@ -72,10 +73,10 @@ export default function RefundPage() {
           <p className="text-muted">
             Email{" "}
             <a
-              href="mailto:billing@linerunner.app"
+              href={`mailto:${BILLING_EMAIL}`}
               className="text-accent-light hover:text-accent underline"
             >
-              billing@linerunner.app
+              {BILLING_EMAIL}
             </a>{" "}
             with the email address on your account and a brief reason. We aim to respond within 2
             business days. Approved refunds are processed back to the original payment method via

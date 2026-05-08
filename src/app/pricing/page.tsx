@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { PRICING_PLANS, CREDIT_BLOCKS } from "@/lib/manifest-financial";
+import { ENTERPRISE_EMAIL } from "@/lib/contact";
 
 export default function PricingPage() {
   const router = useRouter();
@@ -76,20 +77,20 @@ export default function PricingPage() {
           <div className="text-sm text-muted mb-6">forever</div>
 
           <div className="bg-surface-light rounded-xl p-3 mb-5 text-center">
-            <div className="text-lg font-bold text-foreground">1 scene</div>
-            <div className="text-xs text-muted">per month · 2,500 credits</div>
+            <div className="text-lg font-bold text-foreground">Demo + 1 upload</div>
+            <div className="text-xs text-muted">2.5 min for your script</div>
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
             {([
-              { text: "1 scene run per month" },
-              { text: "2,500 credits (~2.5 min AI audio)" },
+              { text: "Full demo library — no signup" },
+              { text: "1 personal script upload" },
+              { text: "2.5 min of AI audio for your script" },
               { text: "3 basic AI voices" },
               { text: "Standard rehearsal mode" },
               { text: "Script analysis on upload" },
               { text: "Line Memory Tracker" },
-              { text: "Teleprompter mode" },
-              { text: "Bookmarks" },
+              { text: "Teleprompter & Bookmarks" },
             ] as const).map((f) => (
               <FeatureLi key={f.text} text={f.text} />
             ))}
@@ -106,15 +107,15 @@ export default function PricingPage() {
           <div className="text-sm text-muted mb-6">per month</div>
 
           <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 mb-5 text-center">
-            <div className="text-lg font-bold text-accent-light">40,000 credits</div>
-            <div className="text-xs text-muted">~40 minutes of AI audio/month</div>
+            <div className="text-lg font-bold text-accent-light">110 minutes</div>
+            <div className="text-xs text-muted">of AI audio per month</div>
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
             {([
               { text: "Everything in Free" },
-              { text: "40,000 credits/month" },
-              { text: "Unlimited scene runs" },
+              { text: "110 minutes / month" },
+              { text: "Unlimited script uploads" },
               { text: "10 AI voices, full customisation" },
               { text: "All 10 rehearsal modes", soon: true },
               { text: "AI Performance Coach", soon: true },
@@ -123,7 +124,7 @@ export default function PricingPage() {
               { text: "Annotations (8 types + voice memos)", soon: true },
               { text: "Self-Tape Studio with 1080p export", soon: true },
               { text: "Audition Vault + Scene Exchange", soon: true },
-              { text: "Credit blocks from $8 when you need more", soon: true },
+              { text: "Top-up blocks from $5 anytime", soon: true },
             ] as const).map((f) => (
               <FeatureLi key={f.text} text={f.text} soon={(f as { soon?: boolean }).soon} />
             ))}
@@ -145,14 +146,14 @@ export default function PricingPage() {
           <div className="text-sm text-muted mb-6">per month</div>
 
           <div className="bg-success/10 border border-success/20 rounded-xl p-3 mb-5 text-center">
-            <div className="text-lg font-bold text-success">75,000 credits</div>
-            <div className="text-xs text-muted">~75 minutes of AI audio/month</div>
+            <div className="text-lg font-bold text-success">400 minutes</div>
+            <div className="text-xs text-muted">of AI audio per month</div>
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
             {([
               { text: "Everything in Pro" },
-              { text: "75,000 credits/month" },
+              { text: "400 minutes / month" },
               { text: "25 AI voices per script" },
               { text: "VO Professional Suite (10 tools)", soon: true },
               { text: "Demo Reel Producer (7 genres)", soon: true },
@@ -206,15 +207,15 @@ export default function PricingPage() {
               <FeatureLi key={f.text} text={f.text} soon={(f as { soon?: boolean }).soon} />
             ))}
           </ul>
-          <a href="mailto:enterprise@linerunner.app" className="w-full py-3 rounded-xl font-semibold transition-all bg-warning/10 hover:bg-warning/20 text-warning border border-warning/20 block text-center">Contact Sales</a>
+          <a href={`mailto:${ENTERPRISE_EMAIL}`} className="w-full py-3 rounded-xl font-semibold transition-all bg-warning/10 hover:bg-warning/20 text-warning border border-warning/20 block text-center">Contact Sales</a>
         </div>
       </div>
 
       {/* Credit Blocks */}
       <div className="max-w-4xl mx-auto mb-16">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold mb-2">Need more credits?</h2>
-          <p className="text-muted">Pro and Studio subscribers can buy credit blocks anytime. No expiry — use them at your own pace.</p>
+          <h2 className="text-3xl font-bold mb-2">Pay-as-you-go credit blocks</h2>
+          <p className="text-muted">Buy a block anytime — no subscription required. Pro is still 2-3× cheaper per minute, but blocks are perfect for occasional users.</p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -309,7 +310,7 @@ export default function PricingPage() {
           <h2 className="text-2xl font-bold mb-2">Stage schools & theatre companies</h2>
           <p className="text-muted">Volume pricing, multi-seat admin, student accounts, Director&apos;s Cut for teacher-student collaboration, custom VO curriculum, and co-branded options. Annual invoicing available.</p>
         </div>
-        <a href="mailto:enterprise@linerunner.app" className="shrink-0 bg-warning/10 hover:bg-warning/20 text-warning font-semibold px-8 py-3.5 rounded-xl transition-colors border border-warning/20 whitespace-nowrap">
+        <a href={`mailto:${ENTERPRISE_EMAIL}`} className="shrink-0 bg-warning/10 hover:bg-warning/20 text-warning font-semibold px-8 py-3.5 rounded-xl transition-colors border border-warning/20 whitespace-nowrap">
           Contact Sales
         </a>
       </div>
@@ -322,9 +323,9 @@ export default function PricingPage() {
             { q: "What are credits?", a: "1 credit = 1 character of AI-generated dialogue. A typical script page contains about 1,000 characters of dialogue, which equals roughly 1 minute of AI audio. Only the AI characters' lines consume credits — your lines are spoken live and cost nothing." },
             { q: "What happens if I run out of credits?", a: "On the Free plan, you'll need to wait until next month. On Pro and Studio, you can instantly buy credit blocks starting at $8 for 10 minutes. Credits never expire — use them whenever you need them." },
             { q: "What are credit blocks?", a: "Credit blocks are one-time purchases of extra credits for Pro and Studio subscribers. They come in 4 sizes: 10 min ($8), 30 min ($20), 60 min ($35), and 120 min ($60). Larger blocks offer a better per-minute rate. Credits from blocks never expire." },
-            { q: "Is the Free plan really free?", a: "Yes. No credit card required. You get 1 complete scene run per month with 2,500 credits, basic AI voices, and script analysis. Upgrade anytime." },
-            { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, and 40,000 credits with 10 AI voices. Studio nearly doubles your credits to 75,000 with 25 voices, and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
-            { q: "What about stage schools and theatre companies?", a: "Enterprise plans include unlimited credits, multi-seat admin, student & faculty accounts, Director's Cut for teacher collaboration, custom curriculum, SSO, and annual invoicing. Contact enterprise@linerunner.app for a custom quote." },
+            { q: "Is the Free plan really free?", a: "Yes. No credit card required. Browse the demo library with no signup, then sign up to upload one script of your own with 2.5 minutes of AI audio. Upgrade or buy a credit block anytime." },
+            { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, 110 minutes/month, and 10 AI voices. Studio gives you 400 minutes/month with 25 voices, and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
+            { q: "What about stage schools and theatre companies?", a: `Enterprise plans include unlimited credits, multi-seat admin, student & faculty accounts, Director's Cut for teacher collaboration, custom curriculum, SSO, and annual invoicing. Contact ${ENTERPRISE_EMAIL} for a custom quote.` },
             { q: "Can I cancel anytime?", a: "Yes. Pro and Studio are monthly subscriptions with no lock-in. Cancel anytime and keep access through the end of your billing period. Unused credit blocks carry over." },
             { q: "How do income features work?", a: "Studio subscribers can sell Monologue Masterclasses (you keep 85%), set up PASS fan memberships ($3/$9/$19 tiers, you keep 85%), build Gemini voice prints, and use the Client Delivery Portal (3% transaction fee). All earnings are visible in the STUDIO dashboard with monthly payouts." },
             { q: "Who processes payments?", a: "All payments are securely processed by Stripe. Your card details are never stored on Line Runner — they go straight from your browser to Stripe over HTTPS." },
@@ -356,9 +357,9 @@ const SOON = { soon: true } as const;
 type Cell = boolean | string | typeof SOON;
 
 const COMPARISON_ROWS: { feature: string; free: Cell; pro: Cell; studio: Cell; enterprise: Cell }[] = [
-  { feature: "Monthly credits", free: "2,500", pro: "40,000", studio: "75,000", enterprise: "Unlimited" },
-  { feature: "Credit blocks", free: "—", pro: SOON, studio: SOON, enterprise: SOON },
-  { feature: "Scene runs", free: "1/month", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
+  { feature: "Monthly minutes", free: "2.5", pro: "110", studio: "400", enterprise: "Unlimited" },
+  { feature: "Pay-as-you-go blocks", free: true, pro: true, studio: true, enterprise: true },
+  { feature: "Personal script uploads", free: "1", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
   { feature: "AI voices per script", free: "3", pro: "10", studio: "25", enterprise: "25+" },
   { feature: "Rehearsal modes", free: "Standard", pro: SOON, studio: SOON, enterprise: SOON },
   { feature: "Script analysis", free: true, pro: true, studio: true, enterprise: true },

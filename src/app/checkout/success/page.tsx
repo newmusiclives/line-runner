@@ -40,9 +40,8 @@ const PLAN_DETAILS: Record<string, { name: string; price: number; minutes: numbe
 
 const CREDIT_BLOCK_MINUTES: Record<string, number> = {
   block_10: 10,
-  block_30: 30,
-  block_60: 60,
-  block_120: 120,
+  block_40: 40,
+  block_100: 100,
 };
 
 function SuccessInner() {

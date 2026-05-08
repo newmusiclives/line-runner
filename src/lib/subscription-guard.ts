@@ -97,7 +97,7 @@ export async function checkVoiceCredits(
     const remaining = Math.max(0, 2.5 - used);
 
     if (estimatedMinutes > remaining) {
-      return { allowed: false, minutesRemaining: remaining, reason: `Free plan has ${remaining.toFixed(1)} minutes remaining. Upgrade to Pro for 40 minutes/month.` };
+      return { allowed: false, minutesRemaining: remaining, reason: `Free plan has ${remaining.toFixed(1)} minutes remaining. Upgrade to Pro for 110 minutes/month or buy a credit block.` };
     }
     return { allowed: true, minutesRemaining: remaining };
   }

@@ -279,32 +279,133 @@ export default function GhlSetupPage() {
             );
           }}
         />
-      </div>
 
-      {/* Workflow recipe */}
-      <div className="mt-10 bg-surface border border-border rounded-2xl p-6">
-        <h3 className="font-semibold mb-3">Workflow triggers (do these in GHL UI)</h3>
-        <p className="text-sm text-muted mb-4">
-          GHL workflows can&apos;t be created via API — once the templates above exist, build these
-          three workflows manually in <span className="font-mono text-foreground">GHL → Automation → Workflows</span>:
-        </p>
-        <ol className="list-decimal pl-5 space-y-3 text-sm">
-          <li>
-            <span className="font-semibold">Welcome on signup</span> — Trigger: <em>Contact tag added</em> ={" "}
-            <code className="text-xs bg-surface-light px-1.5 py-0.5 rounded">new-user</code>. Action: Send email →
-            Template <em>&quot;Line Runner — Welcome&quot;</em>.
-          </li>
-          <li>
-            <span className="font-semibold">Subscriber confirmation</span> — Trigger: <em>Contact tag added</em> ={" "}
-            <code className="text-xs bg-surface-light px-1.5 py-0.5 rounded">subscriber</code>. Action: Send email →
-            Template <em>&quot;Line Runner — Subscriber Welcome&quot;</em>.
-          </li>
-          <li>
-            <span className="font-semibold">Churn winback</span> — Trigger: <em>Contact tag added</em> ={" "}
-            <code className="text-xs bg-surface-light px-1.5 py-0.5 rounded">churned</code>. Action: Wait 1 day → Send
-            email → Template <em>&quot;Line Runner — Churn Winback&quot;</em>.
-          </li>
-        </ol>
+        {/* Step 5 — manual workflow build in GHL UI */}
+        <Step5Workflows />
+      </div>
+    </div>
+  );
+}
+
+const WORKFLOW_STATE_KEY = "lr-ghl-workflows-built-v1";
+
+const WORKFLOWS = [
+  {
+    key: "welcome",
+    title: "Welcome on signup",
+    tag: "new-user",
+    template: "Line Runner — Welcome",
+    extra: null as string | null,
+  },
+  {
+    key: "subscriber",
+    title: "Subscriber confirmation",
+    tag: "subscriber",
+    template: "Line Runner — Subscriber Welcome",
+    extra: null,
+  },
+  {
+    key: "churn",
+    title: "Churn winback",
+    tag: "churned",
+    template: "Line Runner — Churn Winback",
+    extra: "Add a 1-day wait step before the Send email action.",
+  },
+];
+
+function Step5Workflows() {
+  const [done, setDone] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(WORKFLOW_STATE_KEY);
+      if (raw) setDone(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const toggle = (key: string) => {
+    setDone((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem(WORKFLOW_STATE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const completedCount = Object.values(done).filter(Boolean).length;
+  const allDone = completedCount === WORKFLOWS.length;
+
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-5">
+      <div className="flex items-start gap-4">
+        <div
+          className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 ${
+            allDone ? "bg-success/15 text-success" : "bg-accent/15 text-accent-light"
+          }`}
+        >
+          {allDone ? "✓" : "5"}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+            <h2 className="font-semibold">Build the 3 workflows in GHL UI</h2>
+            <span className="text-xs text-muted">{completedCount} of {WORKFLOWS.length} built</span>
+          </div>
+          <p className="text-sm text-muted mb-4">
+            GHL workflows can&apos;t be created via API. Open{" "}
+            <span className="font-mono text-foreground">
+              GHL → Automation → Workflows
+            </span>{" "}
+            and build each one below. Tick the box when it&apos;s saved and active — your progress
+            is remembered locally.
+          </p>
+          <ul className="space-y-3">
+            {WORKFLOWS.map((wf) => {
+              const isDone = !!done[wf.key];
+              return (
+                <li
+                  key={wf.key}
+                  className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                    isDone
+                      ? "bg-success/5 border-success/30"
+                      : "bg-background border-border"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isDone}
+                    onChange={() => toggle(wf.key)}
+                    className="mt-1 w-4 h-4 shrink-0 cursor-pointer"
+                    aria-label={`Mark ${wf.title} as built`}
+                  />
+                  <div className="flex-1 min-w-0 text-sm">
+                    <div className={`font-semibold ${isDone ? "line-through text-muted" : "text-foreground"}`}>
+                      {wf.title}
+                    </div>
+                    <div className="text-muted text-xs mt-0.5 space-y-0.5">
+                      <div>
+                        Trigger: <em>Contact tag added</em> ={" "}
+                        <code className="bg-surface-light px-1.5 py-0.5 rounded text-foreground">
+                          {wf.tag}
+                        </code>
+                      </div>
+                      <div>
+                        Action: Send email → Template{" "}
+                        <em className="text-foreground">&quot;{wf.template}&quot;</em>
+                      </div>
+                      {wf.extra && <div className="text-amber-400">{wf.extra}</div>}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {allDone && (
+            <div className="mt-4 text-sm text-success">
+              ✓ All workflows are marked built. Trigger a real signup or checkout to verify GHL is sending emails.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

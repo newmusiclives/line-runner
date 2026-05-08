@@ -5,6 +5,11 @@ import { getUserByEmail, verifyPassword, createUser } from "@/lib/db/users";
 import { ensureTable, getSetting } from "@/lib/db/integrations";
 import { syncContactToGhl } from "@/lib/gohighlevel";
 
+const AUTH_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+if (!AUTH_SECRET && process.env.NODE_ENV === "production") {
+  throw new Error("AUTH_SECRET (or NEXTAUTH_SECRET) must be set in production");
+}
+
 // Cache Google creds so we don't hit DB on every request
 let cachedGoogleCreds: { clientId: string; clientSecret: string } | null | undefined = undefined;
 
@@ -125,5 +130,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET || "lr-secret-change-me-in-env-vars-2026",
+  secret: AUTH_SECRET,
 });

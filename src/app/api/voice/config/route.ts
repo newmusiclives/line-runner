@@ -16,8 +16,7 @@ export async function GET() {
   const apiKey = await getSetting("gemini_api_key");
 
   return NextResponse.json({
-    engine: apiKey ? "gemini" : "browser",
-    apiKey: apiKey || null,
+    engine: apiKey || process.env.GEMINI_API_KEY ? "gemini" : "browser",
     credits: {
       minutesRemaining: creditCheck.minutesRemaining,
       hasCredits: creditCheck.allowed,

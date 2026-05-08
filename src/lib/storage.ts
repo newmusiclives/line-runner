@@ -22,7 +22,7 @@ async function getCloudConfig(): Promise<{ endpoint: string; bucket: string; acc
   return null;
 }
 
-export async function uploadAudio(audioData: string, fileName?: string): Promise<StorageResult> {
+export async function uploadAudio(audioData: string, userId: string, fileName?: string): Promise<StorageResult> {
   const config = await getCloudConfig();
 
   if (config) {
@@ -57,20 +57,22 @@ export async function uploadAudio(audioData: string, fileName?: string): Promise
   const id = nanoid();
   await sql`CREATE TABLE IF NOT EXISTS audio_storage (
     id TEXT PRIMARY KEY,
+    user_id TEXT,
     data TEXT NOT NULL,
     content_type TEXT DEFAULT 'audio/webm',
     file_name TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
   )`;
-  await sql`INSERT INTO audio_storage (id, data, file_name) VALUES (${id}, ${audioData}, ${fileName || "audio.webm"})`;
+  await sql`ALTER TABLE audio_storage ADD COLUMN IF NOT EXISTS user_id TEXT`;
+  await sql`INSERT INTO audio_storage (id, user_id, data, file_name) VALUES (${id}, ${userId}, ${audioData}, ${fileName || "audio.webm"})`;
 
   return { url: `/api/audio/${id}`, storageType: "database" };
 }
 
-export async function getAudioFromDb(id: string): Promise<{ data: string; contentType: string } | null> {
+export async function getAudioFromDb(id: string): Promise<{ data: string; contentType: string; userId: string | null } | null> {
   const sql = getDb();
-  const rows = await sql`SELECT data, content_type FROM audio_storage WHERE id = ${id} LIMIT 1`;
+  const rows = await sql`SELECT data, content_type, user_id FROM audio_storage WHERE id = ${id} LIMIT 1`;
   if (rows.length === 0) return null;
-  const row = rows[0] as { data: string; content_type: string };
-  return { data: row.data, contentType: row.content_type };
+  const row = rows[0] as { data: string; content_type: string; user_id: string | null };
+  return { data: row.data, contentType: row.content_type, userId: row.user_id };
 }

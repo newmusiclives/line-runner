@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PRIVACY_EMAIL } from "@/lib/contact";
 
 export const metadata = {
   title: "Privacy Policy — Line Runner",
@@ -21,8 +22,8 @@ export default function PrivacyPage() {
         <p className="text-muted">
           This Privacy Policy explains what we collect, how we use it, and the choices you have. If
           you have any questions, email{" "}
-          <a href="mailto:privacy@linerunner.app" className="text-accent-light hover:text-accent underline">
-            privacy@linerunner.app
+          <a href={`mailto:${PRIVACY_EMAIL}`} className="text-accent-light hover:text-accent underline">
+            {PRIVACY_EMAIL}
           </a>
           .
         </p>
@@ -121,8 +122,8 @@ export default function PrivacyPage() {
           </ul>
           <p className="text-muted mt-3">
             To exercise any of these rights, email{" "}
-            <a href="mailto:privacy@linerunner.app" className="text-accent-light hover:text-accent underline">
-              privacy@linerunner.app
+            <a href={`mailto:${PRIVACY_EMAIL}`} className="text-accent-light hover:text-accent underline">
+              {PRIVACY_EMAIL}
             </a>
             . We&apos;ll respond within 30 days.
           </p>
@@ -142,8 +143,8 @@ export default function PrivacyPage() {
           <p className="text-muted">
             Line Runner is not for children under 13. We do not knowingly collect data from anyone
             under 13. If you believe we have, contact{" "}
-            <a href="mailto:privacy@linerunner.app" className="text-accent-light hover:text-accent underline">
-              privacy@linerunner.app
+            <a href={`mailto:${PRIVACY_EMAIL}`} className="text-accent-light hover:text-accent underline">
+              {PRIVACY_EMAIL}
             </a>{" "}
             and we will delete it.
           </p>

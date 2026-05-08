@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { CREDIT_BLOCKS } from "@/lib/manifest-financial";
 
 interface SubscriptionInfo {
   tier: string;
@@ -10,22 +11,6 @@ interface SubscriptionInfo {
   minutesIncluded: number;
   active: boolean;
 }
-
-interface CreditBlock {
-  id: string;
-  credits: number;
-  minutes: number;
-  price: number;
-  perMinute: number;
-  savings: string;
-}
-
-const CREDIT_BLOCKS: CreditBlock[] = [
-  { id: "block_10", credits: 10_000, minutes: 10, price: 8, perMinute: 0.80, savings: "" },
-  { id: "block_30", credits: 30_000, minutes: 30, price: 20, perMinute: 0.67, savings: "Save 17%" },
-  { id: "block_60", credits: 60_000, minutes: 60, price: 35, perMinute: 0.58, savings: "Save 27%" },
-  { id: "block_120", credits: 120_000, minutes: 120, price: 60, perMinute: 0.50, savings: "Best value" },
-];
 
 function CreditsInner() {
   const params = useSearchParams();
@@ -157,27 +142,31 @@ function CreditsInner() {
         </div>
       </div>
 
-      {/* Free tier gate */}
+      {/* Subscription upsell — shown to free-tier users above the credit blocks */}
       {isFree && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 mb-8 text-center">
-          <svg className="w-10 h-10 text-amber-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-          </svg>
-          <h3 className="text-lg font-semibold mb-1">Upgrade to buy credit blocks</h3>
-          <p className="text-sm text-muted mb-4">
-            Credit blocks are available for Pro and Studio subscribers.
-          </p>
-          <a
-            href="/dashboard/subscription"
-            className="inline-block px-6 py-2.5 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-dark transition-colors"
-          >
-            View Plans
-          </a>
+        <div className="bg-accent/10 border border-accent/20 rounded-2xl p-6 mb-8">
+          <div className="flex items-start gap-4">
+            <svg className="w-10 h-10 text-accent shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-1">Subscribers save 50%+ per minute</h3>
+              <p className="text-sm text-muted mb-3">
+                Pro is <strong>$20/month for 110 minutes</strong> ($0.18/min) — about 3× cheaper than the smallest credit block. You can still buy blocks below if you prefer pay-as-you-go.
+              </p>
+              <a
+                href="/pricing"
+                className="inline-block px-5 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-dark transition-colors"
+              >
+                Compare plans
+              </a>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Credit Block Cards */}
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid sm:grid-cols-3 gap-4">
         {CREDIT_BLOCKS.map((block) => (
           <div
             key={block.id}
@@ -211,13 +200,11 @@ function CreditsInner() {
             {/* Buy button */}
             <button
               onClick={() => buyBlock(block.id)}
-              disabled={isFree || buying !== null}
+              disabled={buying !== null}
               className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isFree
-                  ? "bg-surface-light text-muted cursor-not-allowed"
-                  : buying === block.id
-                    ? "bg-accent/60 text-white cursor-wait"
-                    : "bg-accent text-white hover:bg-accent-dark"
+                buying === block.id
+                  ? "bg-accent/60 text-white cursor-wait"
+                  : "bg-accent text-white hover:bg-accent-dark"
               }`}
             >
               {buying === block.id ? (

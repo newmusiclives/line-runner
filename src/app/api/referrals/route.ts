@@ -33,7 +33,7 @@ export async function GET() {
   const userId = session.user.id;
 
   // Get or create referral code
-  let codes = await sql`SELECT code FROM referral_codes WHERE user_id = ${userId}`;
+  const codes = await sql`SELECT code FROM referral_codes WHERE user_id = ${userId}`;
   let code: string;
 
   if (codes.length === 0) {

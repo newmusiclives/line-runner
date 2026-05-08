@@ -57,15 +57,15 @@ const FREE_FEATURES = [
 ];
 
 const FREE_LIMITS = [
-  "1 complete scene run per month",
-  "2,500 credits (~2.5 minutes of AI audio)",
+  "Full demo library — no signup needed",
+  "1 personal script upload",
+  "2.5 minutes of AI audio for your own script",
   "3 basic AI voices",
-  "Standard rehearsal mode",
 ];
 
 const PRO_TEASE = [
-  "Unlimited scene runs",
-  "40,000 credits / month + 10 voices",
+  "Unlimited script uploads & scene runs",
+  "110 minutes / month + 10 voices",
   "AI Performance Coach with per-line feedback",
   "Self-Tape Studio with 1080p export",
   "All 10 rehearsal modes (Subtext, Wildcard, Cold Read…)",

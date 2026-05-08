@@ -27,11 +27,12 @@ const EARN_LINKS = [
 ];
 
 const SIGNED_OUT_LINKS = [
+  { href: "/demo", label: "Try Demo" },
   { href: "/scenes", label: "Scenes" },
   { href: "/pricing", label: "Pricing" },
 ];
 
-export default function TopNav({ user }: { user: NavUser | null }) {
+export default function TopNav({ user, stripeTestMode = false }: { user: NavUser | null; stripeTestMode?: boolean }) {
   const [open, setOpen] = useState(false);
   const closeMenu = () => setOpen(false);
 
@@ -78,6 +79,15 @@ export default function TopNav({ user }: { user: NavUser | null }) {
             <span className="text-lg md:text-xl font-bold tracking-tight truncate">
               Line<span className="text-accent-light">Runner</span>
             </span>
+            {stripeTestMode && (
+              <span
+                className="hidden sm:inline-flex items-center gap-1.5 ml-2 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                title="Stripe is in test mode — no real charges. Switch in Admin → Integrations."
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                Test Mode
+              </span>
+            )}
           </Link>
 
           {/* Desktop links */}

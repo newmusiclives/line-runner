@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
 import { getAnnotations, createAnnotation } from "@/lib/db/scripts";
+import { checkFeatureAccess } from "@/lib/subscription-guard";
 import { annotationSchema } from "@/lib/validators";
 
 export async function GET(
@@ -10,6 +11,11 @@ export async function GET(
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const access = await checkFeatureAccess(session.user.id, "annotations");
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.reason || "Feature not available" }, { status: 403 });
   }
 
   const { id } = await params;
@@ -24,6 +30,11 @@ export async function POST(
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const access = await checkFeatureAccess(session.user.id, "annotations");
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.reason || "Feature not available" }, { status: 403 });
   }
 
   const { id } = await params;
