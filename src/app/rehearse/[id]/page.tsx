@@ -782,6 +782,26 @@ export default function RehearsePage({
         </button>
       )}
 
+      {/* Playback Controls — sit above the script so the play button is
+          near the line you're reading instead of at the bottom of the page */}
+      {!isFullscreenMode && (
+        <PlaybackControls
+          isPlaying={isPlaying}
+          isPaused={isPaused}
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onResume={handleResume}
+          onStop={handleStop}
+          onRestart={restart}
+          onPrevLine={goBack}
+          onNextLine={skipLine}
+          onOpenTiming={() => setShowTimingControls(true)}
+          onOpenRemote={() => setShowRemotePanel(true)}
+          currentLine={currentLineIndex}
+          totalLines={dialogueLines.length}
+        />
+      )}
+
       {/* First-run "press play" hint — disappears on first press */}
       {!isPlaying && !isPaused && !sceneComplete && currentLineIndex === 0 && (
         <div className="bg-accent/10 border-b border-accent/20 px-4 py-2.5">
@@ -790,7 +810,7 @@ export default function RehearsePage({
               <path d="M5 3l14 9-14 9V3z" />
             </svg>
             <span>
-              Press the round <span className="font-semibold">▶</span> button below to start.
+              Press the round <span className="font-semibold">▶</span> button above to start.
               {timingSettings.listenMode && lineListener.isSupported && (
                 <> When it&apos;s your turn, just speak your line — we&apos;ll advance when you&apos;re done.</>
               )}
@@ -803,29 +823,12 @@ export default function RehearsePage({
       {isFullscreenMode ? (
         renderModeContent()
       ) : (
-        <div className="flex-1 overflow-y-auto py-6">
+        <div className="flex-1 overflow-y-auto py-6 safe-pb">
           <div className="max-w-3xl mx-auto px-4">
             {renderModeContent()}
           </div>
         </div>
       )}
-
-      {/* Playback Controls */}
-      <PlaybackControls
-        isPlaying={isPlaying}
-        isPaused={isPaused}
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onResume={handleResume}
-        onStop={handleStop}
-        onRestart={restart}
-        onPrevLine={goBack}
-        onNextLine={skipLine}
-        onOpenTiming={() => setShowTimingControls(true)}
-        onOpenRemote={() => setShowRemotePanel(true)}
-        currentLine={currentLineIndex}
-        totalLines={dialogueLines.length}
-      />
 
       {/* Modals */}
       {showModeSelector && <ModeSelector currentMode={mode} onSelectMode={handleModeChange} onClose={() => setShowModeSelector(false)} />}

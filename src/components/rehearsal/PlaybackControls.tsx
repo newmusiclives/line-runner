@@ -32,7 +32,7 @@ export default function PlaybackControls({
   totalLines,
 }: PlaybackControlsProps) {
   return (
-    <div className="bg-surface border-t border-border px-3 sm:px-4 py-3 sm:py-4 safe-pb">
+    <div className="bg-surface border-b border-border px-3 sm:px-4 py-3 sm:py-4">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-center gap-2 sm:gap-3">
           {/* Restart */}
