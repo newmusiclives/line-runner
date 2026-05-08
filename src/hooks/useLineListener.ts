@@ -203,10 +203,13 @@ export function useLineListener({
 
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (hasSpokenRef.current) {
-        // If the user has barely begun the line (<25% match), give them
-        // longer to keep going before we treat silence as "done". A single
-        // word followed by a breath shouldn't kick them out.
-        const wait = score < 0.25 ? silenceMs * 2 : silenceMs;
+        // Scale silence-wait to how done the line is. When the user has
+        // clearly delivered most of the line, advance fast so the scene
+        // feels responsive. When they're mid-stumble, give them more time.
+        let wait: number;
+        if (score >= 0.6) wait = 600;          // basically finished — snap forward
+        else if (score >= 0.25) wait = silenceMs;
+        else wait = silenceMs * 2;             // barely begun — be patient
         silenceTimerRef.current = setTimeout(() => {
           if (!matchedRef.current) {
             matchedRef.current = true;

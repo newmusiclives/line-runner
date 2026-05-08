@@ -141,11 +141,9 @@ export class BrowserVoiceEngine {
     assignment: VoiceAssignment,
     onEnd?: () => void
   ): SpeechSynthesisUtterance | null {
-    const tag = `[TTS] ${assignment.characterName} "${text.slice(0, 40)}${text.length > 40 ? "…" : ""}"`;
-    console.log(`${tag} speak() called, synth available: ${!!this.synth}, voices loaded: ${this.voices.length}`);
-
     if (!this.synth) {
-      console.warn(`${tag} no synth — advancing immediately`);
+      // No synth — don't hang the rehearsal; advance immediately so the user
+      // isn't stuck on a silent line forever.
       onEnd?.();
       return null;
     }
@@ -162,45 +160,44 @@ export class BrowserVoiceEngine {
         elderly: 0.85,
       };
       u.pitch = (pitchMap[assignment.age] || 1.0) * assignment.pitch;
-      u.rate = assignment.rate;
+      // Clamp rate. Emotion adjustments can push assignment.rate as low as
+      // ~0.7, which sounds painfully slow for short cue lines like Nurse's
+      // "Madam!". Floor at 0.9 so character emotion still varies but no
+      // utterance is below natural conversational pace.
+      u.rate = Math.min(1.6, Math.max(0.9, assignment.rate));
       return u;
     };
 
+    // Chrome quirk: after the synth has been idle or recently cancelled,
+    // synth.speak() can fire `end` immediately without `start` ever firing,
+    // making the utterance silent. Track whether `start` actually fired and
+    // retry once if not. Listen for `error` so we never hang on a cancelled
+    // utterance either.
     let endedFired = false;
     let attempts = 0;
-    const startTimes: number[] = [];
-    const fireEndOnce = (reason: string) => {
+    const fireEndOnce = () => {
       if (endedFired) return;
       endedFired = true;
-      console.log(`${tag} → onEnd (${reason})`);
       onEnd?.();
     };
 
     const tryOnce = () => {
       attempts += 1;
       const utterance = buildUtterance();
-      const t0 = performance.now();
-      startTimes.push(t0);
       let started = false;
-      console.log(`${tag} attempt ${attempts}: synth.speak() (rate=${utterance.rate.toFixed(2)}, pitch=${utterance.pitch.toFixed(2)}, voice=${utterance.voice?.name ?? "default"})`);
       utterance.addEventListener("start", () => {
         started = true;
-        console.log(`${tag} attempt ${attempts}: start fired after ${Math.round(performance.now() - t0)}ms`);
       });
       utterance.addEventListener("end", () => {
-        const dt = Math.round(performance.now() - t0);
-        console.log(`${tag} attempt ${attempts}: end fired after ${dt}ms, started=${started}`);
         if (!started && attempts < 2) {
           synth.cancel();
           setTimeout(tryOnce, 120);
           return;
         }
-        fireEndOnce(started ? `end after ${dt}ms` : `silent end after ${dt}ms`);
+        fireEndOnce();
       });
-      utterance.addEventListener("error", (e) => {
-        const err = (e as { error?: string }).error ?? "unknown";
-        console.warn(`${tag} attempt ${attempts}: error="${err}"`);
-        fireEndOnce(`error: ${err}`);
+      utterance.addEventListener("error", () => {
+        fireEndOnce();
       });
       synth.speak(utterance);
       return utterance;

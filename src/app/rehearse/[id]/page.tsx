@@ -228,8 +228,6 @@ export default function RehearsePage({
 
   const advanceLine = useCallback(() => {
     if (!session) return;
-    const fromLine = dialogueLines[currentLineIndex];
-    console.log(`[ADVANCE] from idx=${currentLineIndex} (${fromLine?.character ?? "?"}: "${(fromLine?.text ?? "").slice(0, 30)}…")`);
     // Record timing metric
     if (lineStartTimeRef.current > 0) {
       const timingMs = Date.now() - lineStartTimeRef.current;
@@ -350,12 +348,8 @@ export default function RehearsePage({
     // Re-running setup for the same line queues duplicate TTS utterances; the
     // later cancellation of those duplicates fires phantom end events that
     // skip lines. Only set up once per index transition.
-    if (lastSetupIndexRef.current === currentLineIndex) {
-      console.log(`[EFFECT] skip re-setup for idx=${currentLineIndex} (already set up)`);
-      return;
-    }
+    if (lastSetupIndexRef.current === currentLineIndex) return;
     lastSetupIndexRef.current = currentLineIndex;
-    console.log(`[EFFECT] set up idx=${currentLineIndex} (${currentLine.character}: "${currentLine.text.slice(0, 40)}…"), mine=${currentLine.character === session.myCharacter}`);
 
     if (currentLine.character === session.myCharacter) {
       setWaitingForUser(true);
