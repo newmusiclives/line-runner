@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Pages that require authentication (at minimum a Free account)
 const PROTECTED_ROUTES = [
   "/upload",
   "/dashboard",
@@ -16,19 +15,16 @@ const PROTECTED_ROUTES = [
   "/studio",
 ];
 
-// Admin-only routes
 const ADMIN_ROUTES = ["/admin"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Check if route requires auth
   const isProtected = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
   const isAdmin = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
 
   if (!isProtected && !isAdmin) return NextResponse.next();
 
-  // Check for session token (NextAuth uses this cookie)
   const sessionToken =
     request.cookies.get("authjs.session-token")?.value ||
     request.cookies.get("__Secure-authjs.session-token")?.value ||
