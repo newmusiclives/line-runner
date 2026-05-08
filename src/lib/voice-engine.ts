@@ -141,9 +141,11 @@ export class BrowserVoiceEngine {
     assignment: VoiceAssignment,
     onEnd?: () => void
   ): SpeechSynthesisUtterance | null {
+    const tag = `[TTS] ${assignment.characterName} "${text.slice(0, 40)}${text.length > 40 ? "…" : ""}"`;
+    console.log(`${tag} speak() called, synth available: ${!!this.synth}, voices loaded: ${this.voices.length}`);
+
     if (!this.synth) {
-      // No synth — don't hang the rehearsal; advance immediately so the user
-      // isn't stuck on a silent line forever.
+      console.warn(`${tag} no synth — advancing immediately`);
       onEnd?.();
       return null;
     }
@@ -164,39 +166,41 @@ export class BrowserVoiceEngine {
       return u;
     };
 
-    // Chrome quirk: after the synth has been idle or recently cancelled,
-    // synth.speak() can fire `end` immediately without `start` ever firing,
-    // making the utterance silent. We track whether `start` actually fired
-    // and retry once if not. We also fire onEnd on `error` so we never hang.
     let endedFired = false;
     let attempts = 0;
-    const fireEndOnce = () => {
+    const startTimes: number[] = [];
+    const fireEndOnce = (reason: string) => {
       if (endedFired) return;
       endedFired = true;
+      console.log(`${tag} → onEnd (${reason})`);
       onEnd?.();
     };
 
     const tryOnce = () => {
       attempts += 1;
       const utterance = buildUtterance();
+      const t0 = performance.now();
+      startTimes.push(t0);
       let started = false;
+      console.log(`${tag} attempt ${attempts}: synth.speak() (rate=${utterance.rate.toFixed(2)}, pitch=${utterance.pitch.toFixed(2)}, voice=${utterance.voice?.name ?? "default"})`);
       utterance.addEventListener("start", () => {
         started = true;
+        console.log(`${tag} attempt ${attempts}: start fired after ${Math.round(performance.now() - t0)}ms`);
       });
       utterance.addEventListener("end", () => {
+        const dt = Math.round(performance.now() - t0);
+        console.log(`${tag} attempt ${attempts}: end fired after ${dt}ms, started=${started}`);
         if (!started && attempts < 2) {
-          // Chrome cancel-quirk: end without start. Reset the queue and try
-          // one more time on the next tick.
           synth.cancel();
           setTimeout(tryOnce, 120);
           return;
         }
-        fireEndOnce();
+        fireEndOnce(started ? `end after ${dt}ms` : `silent end after ${dt}ms`);
       });
-      utterance.addEventListener("error", () => {
-        // Errors include "interrupted" (when caller stops us). Treat as end so
-        // the page can react instead of waiting forever.
-        fireEndOnce();
+      utterance.addEventListener("error", (e) => {
+        const err = (e as { error?: string }).error ?? "unknown";
+        console.warn(`${tag} attempt ${attempts}: error="${err}"`);
+        fireEndOnce(`error: ${err}`);
       });
       synth.speak(utterance);
       return utterance;
