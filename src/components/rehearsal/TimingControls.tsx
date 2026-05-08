@@ -7,6 +7,7 @@ export interface TimingSettings {
   playbackSpeed: number;   // voice rate multiplier: 0.5 to 2.0
   listenMode: boolean;     // listen to mic and auto-advance when user finishes their line
   matchThreshold: number;  // 0..1 — fraction of expected words needed to count as a match
+  silenceMs: number;       // ms of silence after the user has spoken before auto-advance fires
 }
 
 interface TimingControlsProps {
@@ -20,6 +21,7 @@ export default function TimingControls({ settings, onChange, onClose }: TimingCo
   const [speed, setSpeed] = useState(settings.playbackSpeed);
   const [listen, setListen] = useState(settings.listenMode);
   const [threshold, setThreshold] = useState(settings.matchThreshold);
+  const [silence, setSilence] = useState(settings.silenceMs);
 
   const emit = (next: Partial<TimingSettings>) => {
     onChange({
@@ -27,6 +29,7 @@ export default function TimingControls({ settings, onChange, onClose }: TimingCo
       playbackSpeed: next.playbackSpeed ?? speed,
       listenMode: next.listenMode ?? listen,
       matchThreshold: next.matchThreshold ?? threshold,
+      silenceMs: next.silenceMs ?? silence,
     });
   };
 
@@ -48,6 +51,11 @@ export default function TimingControls({ settings, onChange, onClose }: TimingCo
   const handleThresholdChange = (val: number) => {
     setThreshold(val);
     emit({ matchThreshold: val });
+  };
+
+  const handleSilenceChange = (val: number) => {
+    setSilence(val);
+    emit({ silenceMs: val });
   };
 
   return (
@@ -126,25 +134,47 @@ export default function TimingControls({ settings, onChange, onClose }: TimingCo
               </button>
             </div>
             {listen && (
-              <div className="mt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-muted">Match strictness</label>
-                  <span className="text-xs font-mono text-accent-light">{Math.round(threshold * 100)}%</span>
+              <>
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs text-muted">Match strictness</label>
+                    <span className="text-xs font-mono text-accent-light">{Math.round(threshold * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.3}
+                    max={0.9}
+                    step={0.05}
+                    value={threshold}
+                    onChange={(e) => handleThresholdChange(parseFloat(e.target.value))}
+                    className="w-full accent-accent h-2 bg-surface-light rounded-full appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-muted mt-1">
+                    <span>Forgiving</span>
+                    <span>Strict</span>
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min={0.3}
-                  max={0.9}
-                  step={0.05}
-                  value={threshold}
-                  onChange={(e) => handleThresholdChange(parseFloat(e.target.value))}
-                  className="w-full accent-accent h-2 bg-surface-light rounded-full appearance-none cursor-pointer"
-                />
-                <div className="flex justify-between text-xs text-muted mt-1">
-                  <span>Forgiving</span>
-                  <span>Strict</span>
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs text-muted">End-of-line silence</label>
+                    <span className="text-xs font-mono text-accent-light">{(silence / 1000).toFixed(1)}s</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1000}
+                    max={5000}
+                    step={250}
+                    value={silence}
+                    onChange={(e) => handleSilenceChange(parseInt(e.target.value, 10))}
+                    className="w-full accent-accent h-2 bg-surface-light rounded-full appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-muted mt-1">
+                    <span>1.0s</span>
+                    <span>How long to wait after you stop talking</span>
+                    <span>5.0s</span>
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 

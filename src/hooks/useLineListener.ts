@@ -65,8 +65,8 @@ export function useLineListener({
   expectedText,
   onMatch,
   onSilence,
-  matchThreshold = 0.55,
-  silenceMs = 1500,
+  matchThreshold = 0.75,
+  silenceMs = 2500,
   language = "en-US",
 }: UseLineListenerOptions): UseLineListenerResult {
   const [isListening, setIsListening] = useState(false);
@@ -203,12 +203,16 @@ export function useLineListener({
 
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (hasSpokenRef.current) {
+        // If the user has barely begun the line (<25% match), give them
+        // longer to keep going before we treat silence as "done". A single
+        // word followed by a breath shouldn't kick them out.
+        const wait = score < 0.25 ? silenceMs * 2 : silenceMs;
         silenceTimerRef.current = setTimeout(() => {
           if (!matchedRef.current) {
             matchedRef.current = true;
             onSilenceRef.current?.();
           }
-        }, silenceMs);
+        }, wait);
       }
     };
 

@@ -63,7 +63,8 @@ export default function RehearsePage({
     pauseDuration: 2,
     playbackSpeed: 1.0,
     listenMode: true,
-    matchThreshold: 0.55,
+    matchThreshold: 0.75,
+    silenceMs: 2500,
   });
 
   // Feature states
@@ -332,6 +333,7 @@ export default function RehearsePage({
     onMatch: advanceFromListener,
     onSilence: advanceFromListener,
     matchThreshold: timingSettings.matchThreshold,
+    silenceMs: timingSettings.silenceMs,
   });
 
   // Handle line changes during playback
