@@ -141,39 +141,68 @@ export class BrowserVoiceEngine {
     assignment: VoiceAssignment,
     onEnd?: () => void
   ): SpeechSynthesisUtterance | null {
-    if (!this.synth) return null;
-
-    const utterance = new SpeechSynthesisUtterance(text);
-
-    // Try to match a voice based on gender and accent
-    const preferredVoice = this.voices.find((v) => {
-      const name = v.name.toLowerCase();
-      if (assignment.gender === "female" && !name.includes("female") && !name.includes("samantha") && !name.includes("karen") && !name.includes("victoria")) {
-        // Heuristic matching
-      }
-      return v.lang.startsWith("en");
-    });
-
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+    if (!this.synth) {
+      // No synth — don't hang the rehearsal; advance immediately so the user
+      // isn't stuck on a silent line forever.
+      onEnd?.();
+      return null;
     }
 
-    // Adjust pitch based on age
-    const pitchMap: Record<string, number> = {
-      child: 1.5,
-      "young-adult": 1.1,
-      adult: 1.0,
-      elderly: 0.85,
+    const synth = this.synth;
+    const buildUtterance = () => {
+      const u = new SpeechSynthesisUtterance(text);
+      const preferredVoice = this.voices.find((v) => v.lang.startsWith("en"));
+      if (preferredVoice) u.voice = preferredVoice;
+      const pitchMap: Record<string, number> = {
+        child: 1.5,
+        "young-adult": 1.1,
+        adult: 1.0,
+        elderly: 0.85,
+      };
+      u.pitch = (pitchMap[assignment.age] || 1.0) * assignment.pitch;
+      u.rate = assignment.rate;
+      return u;
     };
-    utterance.pitch = (pitchMap[assignment.age] || 1.0) * assignment.pitch;
-    utterance.rate = assignment.rate;
 
-    if (onEnd) {
-      utterance.addEventListener("end", onEnd);
-    }
+    // Chrome quirk: after the synth has been idle or recently cancelled,
+    // synth.speak() can fire `end` immediately without `start` ever firing,
+    // making the utterance silent. We track whether `start` actually fired
+    // and retry once if not. We also fire onEnd on `error` so we never hang.
+    let endedFired = false;
+    let attempts = 0;
+    const fireEndOnce = () => {
+      if (endedFired) return;
+      endedFired = true;
+      onEnd?.();
+    };
 
-    this.synth.speak(utterance);
-    return utterance;
+    const tryOnce = () => {
+      attempts += 1;
+      const utterance = buildUtterance();
+      let started = false;
+      utterance.addEventListener("start", () => {
+        started = true;
+      });
+      utterance.addEventListener("end", () => {
+        if (!started && attempts < 2) {
+          // Chrome cancel-quirk: end without start. Reset the queue and try
+          // one more time on the next tick.
+          synth.cancel();
+          setTimeout(tryOnce, 120);
+          return;
+        }
+        fireEndOnce();
+      });
+      utterance.addEventListener("error", () => {
+        // Errors include "interrupted" (when caller stops us). Treat as end so
+        // the page can react instead of waiting forever.
+        fireEndOnce();
+      });
+      synth.speak(utterance);
+      return utterance;
+    };
+
+    return tryOnce();
   }
 
   stop() {
