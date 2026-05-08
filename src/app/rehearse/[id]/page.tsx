@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, use } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import { BrowserVoiceEngine, GeminiVoiceEngine, DemoVoiceEngine, createVoiceEngine } from "@/lib/voice-engine";
 import { detectAllEmotions, getEmotionVoiceAdjustment, EMOTION_COLORS } from "@/lib/ai/emotion-detector";
@@ -214,7 +214,16 @@ export default function RehearsePage({
     return session?.voiceAssignments.find((va) => va.characterName === characterName);
   }, [session]);
 
-  const dialogueLines = session?.script.lines.filter((l) => l.type === "dialogue") || [];
+  const dialogueLines = useMemo(
+    () => session?.script.lines.filter((l) => l.type === "dialogue") ?? [],
+    [session]
+  );
+
+  // Tracks the line index the line-change effect has already set up (TTS or
+  // listener). Without this, dep changes that don't actually change the
+  // current line cause speakLine() to fire again, queueing duplicate
+  // utterances whose later cancellation triggers phantom advanceLine() calls.
+  const lastSetupIndexRef = useRef(-1);
 
   const advanceLine = useCallback(() => {
     if (!session) return;
@@ -334,6 +343,12 @@ export default function RehearsePage({
     const currentLine = dialogueLines[currentLineIndex];
     if (!currentLine) return;
 
+    // Re-running setup for the same line queues duplicate TTS utterances; the
+    // later cancellation of those duplicates fires phantom end events that
+    // skip lines. Only set up once per index transition.
+    if (lastSetupIndexRef.current === currentLineIndex) return;
+    lastSetupIndexRef.current = currentLineIndex;
+
     if (currentLine.character === session.myCharacter) {
       setWaitingForUser(true);
       voiceEngineRef.current?.stop();
@@ -392,6 +407,7 @@ export default function RehearsePage({
     setIsPlaying(false);
     setIsPaused(false);
     setWaitingForUser(false);
+    lastSetupIndexRef.current = -1;
     broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: false, isPaused: false });
   }, []);
 
@@ -427,6 +443,7 @@ export default function RehearsePage({
     setLineMetrics([]);
     setArcPoints([]);
     setSpeedRunScore(null);
+    lastSetupIndexRef.current = -1;
     if (mode === "wildcard") setWildcardModifier(null);
     broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: false, isPaused: false });
   }, [mode]);
@@ -761,6 +778,23 @@ export default function RehearsePage({
         <button onClick={() => setShowToolbar(true)} className="absolute right-4 top-28 z-10 text-xs bg-surface border border-border px-2 py-1 rounded-lg text-muted hover:text-foreground">
           Tools
         </button>
+      )}
+
+      {/* First-run "press play" hint — disappears on first press */}
+      {!isPlaying && !isPaused && !sceneComplete && currentLineIndex === 0 && (
+        <div className="bg-accent/10 border-b border-accent/20 px-4 py-2.5">
+          <div className="max-w-3xl mx-auto flex items-center gap-2 text-sm text-accent-light">
+            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M5 3l14 9-14 9V3z" />
+            </svg>
+            <span>
+              Press the round <span className="font-semibold">▶</span> button below to start.
+              {timingSettings.listenMode && lineListener.isSupported && (
+                <> When it&apos;s your turn, just speak your line — we&apos;ll advance when you&apos;re done.</>
+              )}
+            </span>
+          </div>
+        </div>
       )}
 
       {/* Script View / Mode Content */}
