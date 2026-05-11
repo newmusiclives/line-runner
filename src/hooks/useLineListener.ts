@@ -66,7 +66,7 @@ export function useLineListener({
   onMatch,
   onSilence,
   matchThreshold = 0.75,
-  silenceMs = 1800,
+  silenceMs = 2200,
   language = "en-US",
 }: UseLineListenerOptions): UseLineListenerResult {
   const [isListening, setIsListening] = useState(false);
@@ -200,10 +200,14 @@ export function useLineListener({
       // actual silence gap; the wait length scales with how done the line is.
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (hasSpokenRef.current) {
+        // On long lines (Shakespeare soliloquies) the user can cross the
+        // match threshold before they've actually finished delivering, with
+        // breath pauses landing inside the snappy-wait window. 1000ms covers
+        // a typical theatrical breath while still feeling responsive.
         let wait: number;
-        if (score >= matchThreshold) wait = 600; // confident done — snap forward
+        if (score >= matchThreshold) wait = 1000;
         else if (score >= 0.25) wait = silenceMs;
-        else wait = silenceMs * 2;              // barely begun — be patient
+        else wait = silenceMs * 2;
         silenceTimerRef.current = setTimeout(() => {
           if (!matchedRef.current) {
             matchedRef.current = true;
