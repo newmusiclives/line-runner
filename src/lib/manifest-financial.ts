@@ -117,12 +117,14 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: "studio",
     name: "Studio",
-    price: 70,
+    price: 50,
     period: "monthly",
-    // 400 min: cost 400 × $0.08 = $32.00 + Stripe $2.33 → net $35.67 (51.0%)
-    description: "400 minutes of AI audio per month — the complete professional platform with VO tools, income streams, and business dashboard",
+    // 285 min: cost 285 × $0.08 = $22.80 + Stripe ($50 × 2.9% + $0.30 = $1.75)
+    // → total cost $24.55 → net margin $25.45 (50.9%). Proportional reduction
+    // from old $70 / 400 min, holding the ~51% margin floor.
+    description: "285 minutes of AI audio per month — the complete professional platform with VO tools, income streams, and business dashboard",
     features: [
-      "400 minutes of AI audio per month",
+      "285 minutes of AI audio per month",
       "Everything in Pro",
       "Up to 25 AI voices per script",
       "Voice Actor Professional Suite (10 tools)",
@@ -149,10 +151,10 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Three acts (up to 120 pages)",
     ],
     maxCharacters: 25,
-    maxMinutes: 400,
+    maxMinutes: 285,
     costBreakdown: {
       voiceCostPerMin: COST_PER_1K_CREDITS,
-      includedMinutes: 400,
+      includedMinutes: 285,
       includedVoices: 25,
       overagePerMin: 0.30,    // best block rate
       creditBlocks: CREDIT_BLOCKS,

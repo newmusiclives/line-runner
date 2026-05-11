@@ -142,18 +142,18 @@ export default function PricingPage() {
         <div className="bg-surface border border-border rounded-2xl p-5 sm:p-7 flex flex-col">
           <h3 className="text-2xl font-bold mb-1">Studio</h3>
           <p className="text-sm text-muted mb-5">For professional actors and voice artists</p>
-          <div className="text-4xl font-bold mb-1">$70</div>
+          <div className="text-4xl font-bold mb-1">$50</div>
           <div className="text-sm text-muted mb-6">per month</div>
 
           <div className="bg-success/10 border border-success/20 rounded-xl p-3 mb-5 text-center">
-            <div className="text-lg font-bold text-success">400 minutes</div>
+            <div className="text-lg font-bold text-success">285 minutes</div>
             <div className="text-xs text-muted">of AI audio per month</div>
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
             {([
               { text: "Everything in Pro" },
-              { text: "400 minutes / month" },
+              { text: "285 minutes / month" },
               { text: "25 AI voices per script" },
               { text: "VO Professional Suite (10 tools)", soon: true },
               { text: "Demo Reel Producer (7 genres)", soon: true },
@@ -173,7 +173,7 @@ export default function PricingPage() {
             disabled={redirecting !== null}
             className="w-full py-3 rounded-xl font-semibold transition-all bg-surface-light hover:bg-border disabled:opacity-60 text-foreground"
           >
-            {redirecting === PRICING_PLANS[2].id ? "Redirecting…" : "Get Studio — $70/month"}
+            {redirecting === PRICING_PLANS[2].id ? "Redirecting…" : "Get Studio — $50/month"}
           </button>
         </div>
 
@@ -324,7 +324,7 @@ export default function PricingPage() {
             { q: "What happens if I run out of credits?", a: "On the Free plan, you'll need to wait until next month. On Pro and Studio, you can instantly buy credit blocks starting at $8 for 10 minutes. Credits never expire — use them whenever you need them." },
             { q: "What are credit blocks?", a: "Credit blocks are one-time purchases of extra credits for Pro and Studio subscribers. They come in 4 sizes: 10 min ($8), 30 min ($20), 60 min ($35), and 120 min ($60). Larger blocks offer a better per-minute rate. Credits from blocks never expire." },
             { q: "Is the Free plan really free?", a: "Yes. No credit card required. Browse the demo library with no signup, then sign up to upload one script of your own with 5 minutes of AI audio. Upgrade or buy a credit block anytime." },
-            { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, 110 minutes/month, and 10 AI voices. Studio gives you 400 minutes/month with 25 voices, and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
+            { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, 110 minutes/month, and 10 AI voices. Studio gives you 285 minutes/month with 25 voices, and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
             { q: "What about stage schools and theatre companies?", a: `Enterprise plans include unlimited credits, multi-seat admin, student & faculty accounts, Director's Cut for teacher collaboration, custom curriculum, SSO, and annual invoicing. Contact ${ENTERPRISE_EMAIL} for a custom quote.` },
             { q: "Can I cancel anytime?", a: "Yes. Pro and Studio are monthly subscriptions with no lock-in. Cancel anytime and keep access through the end of your billing period. Unused credit blocks carry over." },
             { q: "How do income features work?", a: "Studio subscribers can sell Monologue Masterclasses (you keep 85%), set up PASS fan memberships ($3/$9/$19 tiers, you keep 85%), build Gemini voice prints, and use the Client Delivery Portal (3% transaction fee). All earnings are visible in the STUDIO dashboard with monthly payouts." },
@@ -357,7 +357,7 @@ const SOON = { soon: true } as const;
 type Cell = boolean | string | typeof SOON;
 
 const COMPARISON_ROWS: { feature: string; free: Cell; pro: Cell; studio: Cell; enterprise: Cell }[] = [
-  { feature: "Monthly minutes", free: "5", pro: "110", studio: "400", enterprise: "Unlimited" },
+  { feature: "Monthly minutes", free: "5", pro: "110", studio: "285", enterprise: "Unlimited" },
   { feature: "Pay-as-you-go blocks", free: true, pro: true, studio: true, enterprise: true },
   { feature: "Personal script uploads", free: "1", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
   { feature: "AI voices per script", free: "3", pro: "10", studio: "25", enterprise: "25+" },

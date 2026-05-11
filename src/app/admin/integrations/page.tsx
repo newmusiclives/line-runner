@@ -700,7 +700,7 @@ function StripePanel({
                 { key: f.secretKey, label: "Secret Key", type: "password", placeholder: m === "live" ? "sk_live_..." : "sk_test_..." },
                 { key: f.webhookSecret, label: "Webhook Signing Secret", type: "password", placeholder: "whsec_..." },
                 { key: f.pricePro, label: "Pro Price ID ($20/mo)", type: "text", placeholder: "price_..." },
-                { key: f.priceStudio, label: "Studio Price ID ($70/mo)", type: "text", placeholder: "price_..." },
+                { key: f.priceStudio, label: "Studio Price ID ($50/mo)", type: "text", placeholder: "price_..." },
               ].map((field) => (
                 <div key={field.key}>
                   <label className="block text-sm font-medium mb-1.5">{field.label}</label>
