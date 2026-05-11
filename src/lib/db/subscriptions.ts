@@ -61,7 +61,8 @@ export async function getActiveSubscription(userId: string): Promise<DbSubscript
 }
 
 // Returns the user's active subscription, creating a free-tier row if none exists.
-// Free tier gets 2.5 minutes of voice credits forever (no period reset).
+// Free tier gets 5 minutes of voice credits forever (no period reset).
+// Source of truth for this number: PRICING_PLANS[free].maxMinutes in manifest-financial.ts.
 export async function ensureActiveSubscription(userId: string): Promise<DbSubscription> {
   const existing = await getActiveSubscription(userId);
   if (existing) return existing;
@@ -70,7 +71,7 @@ export async function ensureActiveSubscription(userId: string): Promise<DbSubscr
   const now = new Date().toISOString();
   await sql`INSERT INTO subscriptions
     (id, user_id, plan_id, amount_cents, period, minutes_included, voices_included, current_period_start)
-    VALUES (${id}, ${userId}, 'free', 0, 'forever', 2.5, 1, ${now})`;
+    VALUES (${id}, ${userId}, 'free', 0, 'forever', 5, 6, ${now})`;
   const rows = await sql`SELECT * FROM subscriptions WHERE id = ${id}`;
   return rows[0] as DbSubscription;
 }

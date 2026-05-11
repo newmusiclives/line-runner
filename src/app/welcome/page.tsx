@@ -59,8 +59,8 @@ const FREE_FEATURES = [
 const FREE_LIMITS = [
   "Full demo library — no signup needed",
   "1 personal script upload",
-  "2.5 minutes of AI audio for your own script",
-  "3 basic AI voices",
+  "5 minutes of AI audio for your own script",
+  "6 basic AI voices",
 ];
 
 const PRO_TEASE = [

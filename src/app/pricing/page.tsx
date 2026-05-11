@@ -78,15 +78,15 @@ export default function PricingPage() {
 
           <div className="bg-surface-light rounded-xl p-3 mb-5 text-center">
             <div className="text-lg font-bold text-foreground">Demo + 1 upload</div>
-            <div className="text-xs text-muted">2.5 min for your script</div>
+            <div className="text-xs text-muted">5 min for your script</div>
           </div>
 
           <ul className="space-y-2.5 mb-8 flex-1">
             {([
               { text: "Full demo library — no signup" },
               { text: "1 personal script upload" },
-              { text: "2.5 min of AI audio for your script" },
-              { text: "3 basic AI voices" },
+              { text: "5 min of AI audio for your script" },
+              { text: "6 basic AI voices" },
               { text: "Standard rehearsal mode" },
               { text: "Script analysis on upload" },
               { text: "Line Memory Tracker" },
@@ -323,7 +323,7 @@ export default function PricingPage() {
             { q: "What are credits?", a: "1 credit = 1 character of AI-generated dialogue. A typical script page contains about 1,000 characters of dialogue, which equals roughly 1 minute of AI audio. Only the AI characters' lines consume credits — your lines are spoken live and cost nothing." },
             { q: "What happens if I run out of credits?", a: "On the Free plan, you'll need to wait until next month. On Pro and Studio, you can instantly buy credit blocks starting at $8 for 10 minutes. Credits never expire — use them whenever you need them." },
             { q: "What are credit blocks?", a: "Credit blocks are one-time purchases of extra credits for Pro and Studio subscribers. They come in 4 sizes: 10 min ($8), 30 min ($20), 60 min ($35), and 120 min ($60). Larger blocks offer a better per-minute rate. Credits from blocks never expire." },
-            { q: "Is the Free plan really free?", a: "Yes. No credit card required. Browse the demo library with no signup, then sign up to upload one script of your own with 2.5 minutes of AI audio. Upgrade or buy a credit block anytime." },
+            { q: "Is the Free plan really free?", a: "Yes. No credit card required. Browse the demo library with no signup, then sign up to upload one script of your own with 5 minutes of AI audio. Upgrade or buy a credit block anytime." },
             { q: "What's the difference between Pro and Studio?", a: "Pro gives you everything for rehearsal — all 10 modes, AI coaching, self-tape studio, 110 minutes/month, and 10 AI voices. Studio gives you 400 minutes/month with 25 voices, and adds the entire Voice Actor Professional Suite (10 tools), income features (Masterclass marketplace, PASS memberships, Voice Print Builder), business tools (client delivery, rate calculator), and the STUDIO earnings dashboard." },
             { q: "What about stage schools and theatre companies?", a: `Enterprise plans include unlimited credits, multi-seat admin, student & faculty accounts, Director's Cut for teacher collaboration, custom curriculum, SSO, and annual invoicing. Contact ${ENTERPRISE_EMAIL} for a custom quote.` },
             { q: "Can I cancel anytime?", a: "Yes. Pro and Studio are monthly subscriptions with no lock-in. Cancel anytime and keep access through the end of your billing period. Unused credit blocks carry over." },
@@ -357,7 +357,7 @@ const SOON = { soon: true } as const;
 type Cell = boolean | string | typeof SOON;
 
 const COMPARISON_ROWS: { feature: string; free: Cell; pro: Cell; studio: Cell; enterprise: Cell }[] = [
-  { feature: "Monthly minutes", free: "2.5", pro: "110", studio: "400", enterprise: "Unlimited" },
+  { feature: "Monthly minutes", free: "5", pro: "110", studio: "400", enterprise: "Unlimited" },
   { feature: "Pay-as-you-go blocks", free: true, pro: true, studio: true, enterprise: true },
   { feature: "Personal script uploads", free: "1", pro: "Unlimited", studio: "Unlimited", enterprise: "Unlimited" },
   { feature: "AI voices per script", free: "3", pro: "10", studio: "25", enterprise: "25+" },

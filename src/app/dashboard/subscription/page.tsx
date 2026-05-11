@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { PRICING_PLANS } from "@/lib/manifest-financial";
 
 interface SubscriptionData {
   planId: string;
@@ -23,7 +24,7 @@ interface SubCheck {
 
 type PlanFeature = { text: string; soon?: boolean };
 
-const PLANS: {
+interface DisplayPlan {
   id: string;
   name: string;
   price: string;
@@ -31,55 +32,61 @@ const PLANS: {
   minutes: number;
   features: PlanFeature[];
   popular?: boolean;
-}[] = [
-  {
-    id: "free",
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    minutes: 2.5,
+}
+
+// Curated feature list for the dashboard comparison grid. Price + minutes are
+// pulled from PRICING_PLANS (manifest-financial.ts) so they can't drift.
+const PLAN_DISPLAY: Record<string, { features: PlanFeature[]; popular?: boolean }> = {
+  free: {
     features: [
+      { text: "Full demo library (no signup)" },
+      { text: "1 personal script upload" },
       { text: "Script analysis on upload" },
       { text: "Line Memory Tracker" },
-      { text: "Bookmarks" },
-      { text: "Teleprompter" },
       { text: "Standard rehearsal mode" },
-      { text: "1 scene run per month" },
+      { text: "Teleprompter + Bookmarks" },
     ],
   },
-  {
-    id: "monthly",
-    name: "Pro",
-    price: "$20",
-    period: "/month",
-    minutes: 40,
+  monthly: {
+    popular: true,
     features: [
       { text: "Everything in Free" },
-      { text: "Unlimited scene runs" },
-      { text: "AI Performance Coach", soon: true },
-      { text: "All 10 rehearsal modes", soon: true },
-      { text: "Self-Tape Studio", soon: true },
-      { text: "Audition Vault", soon: true },
-      { text: "Scene Exchange", soon: true },
+      { text: "Unlimited scene runs and uploads" },
+      { text: "All 10 rehearsal modes" },
+      { text: "AI Performance Coach" },
+      { text: "Self-Tape Studio (1080p)" },
+      { text: "Full voice customisation (10 voices)" },
+      { text: "Buy credit blocks anytime" },
     ],
-    popular: true,
   },
-  {
-    id: "studio",
-    name: "Studio",
-    price: "$70",
-    period: "/month",
-    minutes: 75,
+  studio: {
     features: [
       { text: "Everything in Pro" },
-      { text: "VO Professional Suite (10 tools)", soon: true },
-      { text: "Demo Reel Producer", soon: true },
-      { text: "Client Delivery Portal", soon: true },
-      { text: "Studio Business Dashboard", soon: true },
-      { text: "Voice Print Builder", soon: true },
+      { text: "25 AI voices per script" },
+      { text: "VO Professional Suite (10 tools)" },
+      { text: "Demo Reel Producer" },
+      { text: "Client Delivery Portal" },
+      { text: "Voice Print Builder" },
+      { text: "STUDIO Business Dashboard" },
     ],
   },
-];
+};
+
+function buildPlans(): DisplayPlan[] {
+  return PRICING_PLANS.filter((p) => p.id !== "free" ? true : true).map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: `$${p.price}`,
+    period: p.id === "free" ? "forever" : "/month",
+    minutes: p.maxMinutes,
+    features: PLAN_DISPLAY[p.id]?.features ?? [],
+    popular: PLAN_DISPLAY[p.id]?.popular,
+  }));
+}
+
+function getFreeMinutes(): number {
+  return PRICING_PLANS.find((p) => p.id === "free")?.maxMinutes ?? 5;
+}
 
 export default function SubscriptionPage() {
   const [sub, setSub] = useState<SubscriptionData | null>(null);
@@ -88,6 +95,9 @@ export default function SubscriptionPage() {
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const PLANS = useMemo(() => buildPlans(), []);
+  const FREE_MINUTES = useMemo(() => getFreeMinutes(), []);
 
   useEffect(() => {
     async function fetchData() {
@@ -154,7 +164,7 @@ export default function SubscriptionPage() {
   const planName = sub?.planName || "Free";
   const status = sub?.status || "active";
   const minutesUsed = sub?.minutesUsed ?? subCheck?.minutesUsed ?? 0;
-  const minutesIncluded = sub?.minutesIncluded ?? subCheck?.minutesIncluded ?? 2.5;
+  const minutesIncluded = sub?.minutesIncluded ?? subCheck?.minutesIncluded ?? FREE_MINUTES;
   const usagePercent = minutesIncluded > 0 ? Math.min(100, (minutesUsed / minutesIncluded) * 100) : 0;
   const minutesRemaining = Math.max(0, minutesIncluded - minutesUsed);
   const isFree = planId === "free";

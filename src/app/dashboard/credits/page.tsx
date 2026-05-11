@@ -39,7 +39,7 @@ function CreditsInner() {
           tier: data.tier || data.plan_id || "free",
           planName: data.planName || data.tier || "Free",
           minutesUsed: data.minutesUsed ?? data.minutes_used ?? 0,
-          minutesIncluded: data.minutesIncluded ?? data.minutes_included ?? 2.5,
+          minutesIncluded: data.minutesIncluded ?? data.minutes_included ?? 5,
           active: data.active !== false,
         });
       }
