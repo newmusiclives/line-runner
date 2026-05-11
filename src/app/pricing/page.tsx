@@ -218,7 +218,7 @@ export default function PricingPage() {
           <p className="text-muted">Buy a block anytime — no subscription required. Pro is still 2-3× cheaper per minute, but blocks are perfect for occasional users.</p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
           {CREDIT_BLOCKS.map((block) => (
             <div key={block.id} className={`bg-surface border rounded-2xl p-5 text-center relative ${block.savings === "Best value" ? "border-success shadow-lg shadow-success/10" : "border-border"}`}>
               {block.savings && (
