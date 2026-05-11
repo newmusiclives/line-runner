@@ -63,7 +63,7 @@ export default function RehearsePage({
     pauseDuration: 2,
     playbackSpeed: 1.0,
     listenMode: true,
-    matchThreshold: 0.75,
+    matchThreshold: 0.85,
     silenceMs: 2200,
   });
 

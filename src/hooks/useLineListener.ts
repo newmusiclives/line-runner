@@ -65,7 +65,7 @@ export function useLineListener({
   expectedText,
   onMatch,
   onSilence,
-  matchThreshold = 0.75,
+  matchThreshold = 0.85,
   silenceMs = 2200,
   language = "en-US",
 }: UseLineListenerOptions): UseLineListenerResult {
