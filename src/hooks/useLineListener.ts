@@ -66,7 +66,7 @@ export function useLineListener({
   onMatch,
   onSilence,
   matchThreshold = 0.75,
-  silenceMs = 1500,
+  silenceMs = 1800,
   language = "en-US",
 }: UseLineListenerOptions): UseLineListenerResult {
   const [isListening, setIsListening] = useState(false);
@@ -194,22 +194,16 @@ export function useLineListener({
       const score = computeMatchScore(heard, expectedText);
       setMatchScore(score);
 
-      if (score >= matchThreshold && !matchedRef.current) {
-        matchedRef.current = true;
-        clearTimers();
-        onMatchRef.current?.();
-        return;
-      }
-
+      // Never fire onMatch instantly when score crosses threshold mid-line —
+      // on Shakespeare the user can cross 75% before they've actually finished
+      // delivering the full line, which cuts them off. Always wait for an
+      // actual silence gap; the wait length scales with how done the line is.
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (hasSpokenRef.current) {
-        // Scale silence-wait to how done the line is. When the user has
-        // clearly delivered most of the line, advance fast so the scene
-        // feels conversational. When they're mid-stumble, give them more time.
         let wait: number;
-        if (score >= 0.5) wait = 300;          // basically finished — snap forward
-        else if (score >= 0.2) wait = silenceMs;
-        else wait = Math.round(silenceMs * 1.5); // barely begun — be patient
+        if (score >= matchThreshold) wait = 600; // confident done — snap forward
+        else if (score >= 0.25) wait = silenceMs;
+        else wait = silenceMs * 2;              // barely begun — be patient
         silenceTimerRef.current = setTimeout(() => {
           if (!matchedRef.current) {
             matchedRef.current = true;

@@ -64,7 +64,7 @@ export default function RehearsePage({
     playbackSpeed: 1.0,
     listenMode: true,
     matchThreshold: 0.75,
-    silenceMs: 1500,
+    silenceMs: 1800,
   });
 
   // Feature states
