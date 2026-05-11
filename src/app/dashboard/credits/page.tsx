@@ -150,9 +150,9 @@ function CreditsInner() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold mb-1">Subscribers save 50%+ per minute</h3>
+              <h3 className="text-lg font-semibold mb-1">Subscribers save up to 64% per minute</h3>
               <p className="text-sm text-muted mb-3">
-                Pro is <strong>$20/month for 110 minutes</strong> ($0.18/min) — about 3× cheaper than the smallest credit block. You can still buy blocks below if you prefer pay-as-you-go.
+                Pro is <strong>$20/month for 110 minutes</strong> ($0.18/min) — 64% cheaper than the $0.50 block and 39% cheaper than the $0.30 block. You can still buy blocks below if you prefer pay-as-you-go.
               </p>
               <a
                 href="/pricing"
