@@ -94,24 +94,6 @@ export default function ScenesPage() {
         </p>
       </div>
 
-      {/* Upload-your-own banner */}
-      <div className="mb-10 max-w-4xl mx-auto">
-        <Link
-          href="/upload"
-          className="block bg-surface border border-border hover:border-accent/50 rounded-2xl p-5 sm:p-6 transition-colors"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div className="text-base sm:text-lg font-semibold mb-0.5">Rehearse your own script</div>
-              <p className="text-sm text-muted">
-                Free users get 1 upload + 5 minutes of AI audio — no credit card.
-              </p>
-            </div>
-            <span className="text-accent-light font-medium whitespace-nowrap">Upload &rarr;</span>
-          </div>
-        </Link>
-      </div>
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-10">
         {/* Era Tabs */}
@@ -278,6 +260,24 @@ export default function ScenesPage() {
           </p>
         </div>
       )}
+
+      {/* Upload-your-own banner — sits below the scenes grid */}
+      <div className="mt-12 max-w-4xl mx-auto">
+        <Link
+          href="/upload"
+          className="block bg-surface border border-border hover:border-accent/50 rounded-2xl p-5 sm:p-6 transition-colors"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="text-base sm:text-lg font-semibold mb-0.5">Rehearse your own script</div>
+              <p className="text-sm text-muted">
+                Free users get 1 upload + 5 minutes of AI audio — no credit card.
+              </p>
+            </div>
+            <span className="text-accent-light font-medium whitespace-nowrap">Upload &rarr;</span>
+          </div>
+        </Link>
+      </div>
     </div>
   );
 }
