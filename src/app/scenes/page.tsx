@@ -2,8 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { FAMOUS_SCENES, type FamousScene } from "@/lib/famous-scenes";
-import { getDefaultVoiceAssignment } from "@/lib/voice-engine";
+import {
+  getDefaultVoiceAssignment,
+  getPresetForCharacter,
+  presetToVoiceAssignment,
+  VOICE_PRESETS,
+  type VoicePresetId,
+} from "@/lib/voice-engine";
 
 type Era = "All" | "Classical" | "Modern";
 type Difficulty = "All" | "beginner" | "intermediate" | "advanced";
@@ -20,11 +27,19 @@ const DIFFICULTY_LABELS: Record<string, string> = {
   advanced: "Advanced",
 };
 
+// State key: `${sceneId}::${characterName}` → preset id
+type VoiceChoices = Record<string, VoicePresetId>;
+
+function voiceKey(sceneId: string, characterName: string): string {
+  return `${sceneId}::${characterName}`;
+}
+
 export default function ScenesPage() {
   const router = useRouter();
   const [eraFilter, setEraFilter] = useState<Era>("All");
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty>("All");
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [voiceChoices, setVoiceChoices] = useState<VoiceChoices>({});
 
   const filtered = FAMOUS_SCENES.filter((scene) => {
     if (eraFilter !== "All" && scene.era !== eraFilter) return false;
@@ -33,10 +48,28 @@ export default function ScenesPage() {
     return true;
   });
 
-  function startScene(scene: FamousScene, characterName: string) {
-    const voiceAssignments = scene.script.characters.map((char, i) =>
-      getDefaultVoiceAssignment(char, i)
-    );
+  function getChosenPresetId(scene: FamousScene, characterName: string): VoicePresetId {
+    const stored = voiceChoices[voiceKey(scene.id, characterName)];
+    if (stored) return stored;
+    const char = scene.script.characters.find((c) => c.name === characterName);
+    return char ? getPresetForCharacter(char).id : "female-young";
+  }
+
+  function setChosenPresetId(sceneId: string, characterName: string, presetId: VoicePresetId) {
+    setVoiceChoices((prev) => ({ ...prev, [voiceKey(sceneId, characterName)]: presetId }));
+  }
+
+  function startScene(scene: FamousScene, characterName: string, applyPresets: boolean) {
+    const voiceAssignments = scene.script.characters.map((char, i) => {
+      if (!applyPresets || char.name === characterName) {
+        // For the user's own character we still need an assignment in the
+        // session shape, but TTS never fires for it — defaults are fine.
+        return getDefaultVoiceAssignment(char, i);
+      }
+      const presetId = getChosenPresetId(scene, char.name);
+      const preset = VOICE_PRESETS.find((p) => p.id === presetId);
+      return preset ? presetToVoiceAssignment(char, preset) : getDefaultVoiceAssignment(char, i);
+    });
     const session = {
       id: `demo-${scene.id}`,
       script: scene.script,
@@ -52,13 +85,31 @@ export default function ScenesPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       {/* Header */}
-      <div className="text-center mb-12">
+      <div className="text-center mb-8">
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
           Famous Scenes Library
         </h1>
         <p className="text-xl text-muted max-w-2xl mx-auto leading-relaxed">
           Jump into iconic scenes from the greatest plays
         </p>
+      </div>
+
+      {/* Upload-your-own banner */}
+      <div className="mb-10 max-w-4xl mx-auto">
+        <Link
+          href="/upload"
+          className="block bg-surface border border-border hover:border-accent/50 rounded-2xl p-5 sm:p-6 transition-colors"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="text-base sm:text-lg font-semibold mb-0.5">Rehearse your own script</div>
+              <p className="text-sm text-muted">
+                Free users get 1 upload + 5 minutes of AI audio — no credit card.
+              </p>
+            </div>
+            <span className="text-accent-light font-medium whitespace-nowrap">Upload &rarr;</span>
+          </div>
+        </Link>
       </div>
 
       {/* Filters */}
@@ -147,7 +198,7 @@ export default function ScenesPage() {
               {/* Buttons */}
               <div className="flex flex-col gap-2">
                 <button
-                  onClick={() => startScene(scene, firstChar.name)}
+                  onClick={() => startScene(scene, firstChar.name, false)}
                   className="w-full bg-accent hover:bg-accent-dark text-white font-semibold px-4 py-2.5 rounded-xl text-base transition-all hover:scale-[1.02]"
                 >
                   Quick Start as {firstChar.name}
@@ -158,36 +209,61 @@ export default function ScenesPage() {
                   }
                   className="w-full border border-border hover:border-accent/50 text-foreground font-medium px-4 py-2.5 rounded-xl text-base transition-colors"
                 >
-                  {isExpanded ? "Hide Characters" : "Choose Character"}
+                  {isExpanded ? "Hide character & voice options" : "Choose character & voices"}
                 </button>
               </div>
 
-              {/* Expanded character list */}
+              {/* Expanded character list with voice preset pickers */}
               {isExpanded && (
-                <div className="mt-4 space-y-2 border-t border-border pt-4">
-                  {scene.script.characters.map((char) => (
-                    <button
-                      key={char.name}
-                      onClick={() => startScene(scene, char.name)}
-                      className="w-full flex items-center justify-between bg-surface-light hover:bg-accent/10 border border-border hover:border-accent/40 rounded-xl px-4 py-3 transition-colors text-left"
-                    >
-                      <div>
-                        <span className="text-base font-semibold">
-                          {char.name}
-                        </span>
-                        <span className="text-sm text-muted ml-3">
-                          {char.lineCount} lines
-                        </span>
-                        <div className="text-sm text-muted mt-0.5">
-                          {char.suggestedGender} / {char.suggestedAge} /{" "}
-                          {char.suggestedAccent}
+                <div className="mt-4 space-y-3 border-t border-border pt-4">
+                  <p className="text-xs text-muted leading-relaxed">
+                    Pick voices for the AI characters, then play as anyone.
+                    Custom voices use real-time TTS; the &ldquo;default&rdquo;
+                    voice keeps the pre-recorded studio audio.
+                  </p>
+                  {scene.script.characters.map((char) => {
+                    const chosenPresetId = getChosenPresetId(scene, char.name);
+                    return (
+                      <div
+                        key={char.name}
+                        className="bg-surface-light border border-border rounded-xl px-4 py-3"
+                      >
+                        <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                          <div>
+                            <span className="text-base font-semibold">{char.name}</span>
+                            <span className="text-sm text-muted ml-3">{char.lineCount} lines</span>
+                            <div className="text-xs text-muted mt-0.5">
+                              Suggested: {char.suggestedGender} / {char.suggestedAge}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => startScene(scene, char.name, true)}
+                            className="text-sm bg-accent hover:bg-accent-dark text-white font-medium px-4 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                          >
+                            Play as {char.name} &rarr;
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {VOICE_PRESETS.map((preset) => {
+                            const selected = preset.id === chosenPresetId;
+                            return (
+                              <button
+                                key={preset.id}
+                                onClick={() => setChosenPresetId(scene.id, char.name, preset.id)}
+                                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                  selected
+                                    ? "bg-accent/15 border-accent text-accent-light"
+                                    : "bg-transparent border-border text-muted hover:border-accent/40 hover:text-foreground"
+                                }`}
+                              >
+                                {preset.label}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
-                      <span className="text-accent-light text-sm font-medium shrink-0 ml-2">
-                        Play &rarr;
-                      </span>
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

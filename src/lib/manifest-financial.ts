@@ -56,20 +56,20 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       "Full demo library (pre-recorded scenes, no signup)",
       "1 personal script upload",
-      "2.5 minutes of AI audio for your own script",
-      "Basic AI voice options (3 voices)",
+      "5 minutes of AI audio for your own script",
+      "Basic AI voice options (6 presets)",
       "Script analysis on upload",
       "Standard rehearsal mode",
       "Line Memory Tracker",
     ],
     scriptLengths: ["Short episode (up to 15 pages)"],
     maxCharacters: 3,
-    maxMinutes: 2.5,
+    maxMinutes: 5,
     costBreakdown: {
       voiceCostPerMin: COST_PER_1K_CREDITS,
-      includedMinutes: 2.5,   // cost: $0.20
-      includedVoices: 3,
-      overagePerMin: 0,       // no overage on free — they buy a block or subscribe
+      includedMinutes: 5,   // cost: $0.40
+      includedVoices: 6,
+      overagePerMin: 0,     // no overage on free — they buy a block or subscribe
     },
   },
   {

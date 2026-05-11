@@ -29,9 +29,9 @@ export async function checkSubscription(userId: string): Promise<SubscriptionChe
     return {
       allowed: true,
       tier: "free",
-      minutesRemaining: 2.5,
+      minutesRemaining: 5,
       minutesUsed: 0,
-      minutesIncluded: 2.5,
+      minutesIncluded: 5,
     };
   }
 
@@ -90,11 +90,11 @@ export async function checkVoiceCredits(
   const sub = await getActiveSubscription(userId);
 
   if (!sub) {
-    // Free tier: 2.5 minutes total (check from DB how much used)
+    // Free tier: 5 minutes total (check from DB how much used)
     const sql = getDb();
     const usage = await sql`SELECT COALESCE(SUM(minutes_used), 0) as total FROM subscriptions WHERE user_id = ${userId}`;
     const used = Number((usage[0] as any)?.total || 0);
-    const remaining = Math.max(0, 2.5 - used);
+    const remaining = Math.max(0, 5 - used);
 
     if (estimatedMinutes > remaining) {
       return { allowed: false, minutesRemaining: remaining, reason: `Free plan has ${remaining.toFixed(1)} minutes remaining. Upgrade to Pro for 110 minutes/month or buy a credit block.` };

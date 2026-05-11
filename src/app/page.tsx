@@ -99,11 +99,11 @@ export default async function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-md sm:max-w-none mx-auto">
-            <Link href="/upload" className="bg-accent hover:bg-accent-dark text-white font-semibold px-6 sm:px-8 py-3.5 rounded-xl text-base sm:text-lg transition-all sm:hover:scale-105 shadow-lg shadow-accent/25 text-center">
+            <Link href="/scenes" className="bg-accent hover:bg-accent-dark text-white font-semibold px-6 sm:px-8 py-3.5 rounded-xl text-base sm:text-lg transition-all sm:hover:scale-105 shadow-lg shadow-accent/25 text-center">
               Start Rehearsing Free
             </Link>
-            <Link href="/demo" className="border border-border hover:border-accent/50 text-foreground font-medium px-6 sm:px-8 py-3.5 rounded-xl text-base sm:text-lg transition-colors text-center">
-              Try Demo
+            <Link href="/upload" className="border border-border hover:border-accent/50 text-foreground font-medium px-6 sm:px-8 py-3.5 rounded-xl text-base sm:text-lg transition-colors text-center">
+              Upload Your Script
             </Link>
           </div>
 
@@ -280,7 +280,7 @@ export default async function HomePage() {
               <div className="text-2xl font-bold mb-4">$0</div>
               <ul className="space-y-2 text-sm text-muted text-left mb-6">
                 <li className="flex items-center gap-2"><svg className="w-4 h-4 text-success shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>Full demo library (no signup)</li>
-                <li className="flex items-center gap-2"><svg className="w-4 h-4 text-success shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>1 personal upload + 2.5 min audio</li>
+                <li className="flex items-center gap-2"><svg className="w-4 h-4 text-success shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>1 personal upload + 5 min audio</li>
                 <li className="flex items-center gap-2"><svg className="w-4 h-4 text-success shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>Script analysis + Line Memory</li>
                 <li className="flex items-center gap-2"><svg className="w-4 h-4 text-success shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>Teleprompter + Bookmarks</li>
               </ul>

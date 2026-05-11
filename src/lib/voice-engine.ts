@@ -76,6 +76,65 @@ const AGE_OPTIONS: VoiceAssignment["age"][] = [
 
 export { ACCENT_OPTIONS, AGE_OPTIONS };
 
+// Six quick-pick voice presets: male/female × young/middle/older. These are
+// the "default selectable voices" surfaced before starting a demo scene or
+// uploaded script — picked to match the first voice in each Gemini category
+// so they line up with `getDefaultVoiceAssignment` and (where possible) the
+// pre-recorded demo audio manifest.
+export type VoicePresetId =
+  | "male-young"
+  | "male-middle"
+  | "male-older"
+  | "female-young"
+  | "female-middle"
+  | "female-older";
+
+export interface VoicePreset {
+  id: VoicePresetId;
+  label: string;
+  gender: "male" | "female";
+  age: VoiceAssignment["age"];
+  voiceId: string;
+  voiceName: string;
+}
+
+export const VOICE_PRESETS: VoicePreset[] = [
+  { id: "male-young", label: "Male — Young", gender: "male", age: "young-adult", voiceId: "Puck", voiceName: "Puck" },
+  { id: "male-middle", label: "Male — Middle-aged", gender: "male", age: "adult", voiceId: "Charon", voiceName: "Charon" },
+  { id: "male-older", label: "Male — Older", gender: "male", age: "elderly", voiceId: "Umbriel", voiceName: "Umbriel" },
+  { id: "female-young", label: "Female — Young", gender: "female", age: "young-adult", voiceId: "Leda", voiceName: "Leda" },
+  { id: "female-middle", label: "Female — Middle-aged", gender: "female", age: "adult", voiceId: "Kore", voiceName: "Kore" },
+  { id: "female-older", label: "Female — Older", gender: "female", age: "elderly", voiceId: "Autonoe", voiceName: "Autonoe" },
+];
+
+export function getPresetForCharacter(character: Character): VoicePreset {
+  const gender: "male" | "female" =
+    character.suggestedGender === "male" ? "male" : "female";
+  // Map "child" up to young-adult — child voices aren't in the 6-preset set
+  // and a young-adult voice is the closest approximation for a one-click pick.
+  const age = character.suggestedAge === "child" ? "young-adult" : character.suggestedAge;
+  return (
+    VOICE_PRESETS.find((p) => p.gender === gender && p.age === age) ??
+    VOICE_PRESETS[1] // male-middle as ultimate fallback
+  );
+}
+
+export function presetToVoiceAssignment(
+  character: Character,
+  preset: VoicePreset
+): VoiceAssignment {
+  return {
+    characterName: character.name,
+    voiceId: preset.voiceId,
+    voiceName: preset.voiceName,
+    gender: preset.gender,
+    age: preset.age,
+    accent: character.suggestedAccent,
+    pitch: 1.0,
+    rate: 1.0,
+  };
+}
+
 export function getDefaultVoiceAssignment(
   character: Character,
   index: number
