@@ -66,7 +66,7 @@ export function useLineListener({
   onMatch,
   onSilence,
   matchThreshold = 0.75,
-  silenceMs = 2500,
+  silenceMs = 1500,
   language = "en-US",
 }: UseLineListenerOptions): UseLineListenerResult {
   const [isListening, setIsListening] = useState(false);
@@ -205,11 +205,11 @@ export function useLineListener({
       if (hasSpokenRef.current) {
         // Scale silence-wait to how done the line is. When the user has
         // clearly delivered most of the line, advance fast so the scene
-        // feels responsive. When they're mid-stumble, give them more time.
+        // feels conversational. When they're mid-stumble, give them more time.
         let wait: number;
-        if (score >= 0.6) wait = 600;          // basically finished — snap forward
-        else if (score >= 0.25) wait = silenceMs;
-        else wait = silenceMs * 2;             // barely begun — be patient
+        if (score >= 0.5) wait = 300;          // basically finished — snap forward
+        else if (score >= 0.2) wait = silenceMs;
+        else wait = Math.round(silenceMs * 1.5); // barely begun — be patient
         silenceTimerRef.current = setTimeout(() => {
           if (!matchedRef.current) {
             matchedRef.current = true;

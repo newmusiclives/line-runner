@@ -122,6 +122,13 @@ export class BrowserVoiceEngine {
     }
   }
 
+  // No-op: native synth has no network step to warm up. Present so the
+  // rehearse page can call prefetch on any engine without a type check.
+  prefetch(_text: string, _voiceId: string): void {
+    void _text;
+    void _voiceId;
+  }
+
   private loadVoices() {
     if (!this.synth) return;
     this.voices = this.synth.getVoices();
@@ -260,6 +267,14 @@ export class DemoVoiceEngine {
     this.manifestPromise = this.loadManifest();
   }
 
+  // No-op: demo audio is served from /public and HTTP-cached by the browser
+  // after first access. Present so the rehearse page can call prefetch on any
+  // engine without a type check.
+  prefetch(_text: string, _voiceId: string): void {
+    void _text;
+    void _voiceId;
+  }
+
   private async loadManifest(): Promise<void> {
     try {
       const res = await fetch(`/demo-audio/${this.sceneId}/manifest.json`);
@@ -346,9 +361,77 @@ export class GeminiVoiceEngine {
   private audioContext: AudioContext | null = null;
   private currentSource: AudioBufferSourceNode | null = null;
   private browserFallback: BrowserVoiceEngine;
+  // Cache decoded audio buffers keyed by `${voiceId}::${text}` so we can
+  // prefetch the next AI line while the user is still speaking theirs.
+  // Without this, every Juliet response waits on a fresh network round-trip
+  // *after* the silence timer fires, which felt sluggish on Romeo & Juliet.
+  private bufferCache = new Map<string, Promise<AudioBuffer>>();
 
   constructor() {
     this.browserFallback = new BrowserVoiceEngine();
+  }
+
+  private ensureContext(): AudioContext {
+    if (!this.audioContext) {
+      this.audioContext = new AudioContext();
+    }
+    return this.audioContext;
+  }
+
+  private cacheKey(text: string, voiceId: string): string {
+    return `${voiceId}::${text}`;
+  }
+
+  private async fetchBuffer(text: string, voiceId: string): Promise<AudioBuffer> {
+    const ctx = this.ensureContext();
+    const response = await fetch("/api/voice/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, voiceId }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      const err = new Error(body?.error || `TTS proxy error: ${response.status}`) as Error & { code?: string; status?: number };
+      err.code = body?.code;
+      err.status = response.status;
+      throw err;
+    }
+
+    const { audioBase64 } = await response.json();
+    if (!audioBase64) {
+      throw new Error("No audio data in TTS response");
+    }
+
+    // Gemini returns L16 PCM at 24000 Hz — decode to AudioBuffer
+    const raw = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
+    const pcm = new Int16Array(raw.buffer);
+    const floats = new Float32Array(pcm.length);
+    for (let i = 0; i < pcm.length; i++) {
+      floats[i] = pcm[i] / 32768;
+    }
+    const sampleRate = 24000;
+    const audioBuffer = ctx.createBuffer(1, floats.length, sampleRate);
+    audioBuffer.getChannelData(0).set(floats);
+    return audioBuffer;
+  }
+
+  private getOrFetchBuffer(text: string, voiceId: string): Promise<AudioBuffer> {
+    const key = this.cacheKey(text, voiceId);
+    let promise = this.bufferCache.get(key);
+    if (!promise) {
+      promise = this.fetchBuffer(text, voiceId);
+      this.bufferCache.set(key, promise);
+      // Drop on failure so a transient error doesn't poison the cache forever.
+      promise.catch(() => this.bufferCache.delete(key));
+    }
+    return promise;
+  }
+
+  prefetch(text: string, voiceId: string): void {
+    if (!text || !voiceId) return;
+    // Fire and forget — errors will be retried on actual speak.
+    this.getOrFetchBuffer(text, voiceId).catch(() => {});
   }
 
   speak(
@@ -373,46 +456,14 @@ export class GeminiVoiceEngine {
     assignment: VoiceAssignment,
     onEnd?: () => void
   ): Promise<void> {
-    if (!this.audioContext) {
-      this.audioContext = new AudioContext();
-    }
-
-    const response = await fetch("/api/voice/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, voiceId: assignment.voiceId }),
-    });
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      const err = new Error(body?.error || `TTS proxy error: ${response.status}`) as Error & { code?: string; status?: number };
-      err.code = body?.code;
-      err.status = response.status;
-      throw err;
-    }
-
-    const { audioBase64 } = await response.json();
-    if (!audioBase64) {
-      throw new Error("No audio data in TTS response");
-    }
-
-    // Gemini returns L16 PCM at 24000 Hz — decode to AudioBuffer
-    const raw = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
-    const pcm = new Int16Array(raw.buffer);
-    const floats = new Float32Array(pcm.length);
-    for (let i = 0; i < pcm.length; i++) {
-      floats[i] = pcm[i] / 32768;
-    }
-
-    const sampleRate = 24000;
-    const audioBuffer = this.audioContext.createBuffer(1, floats.length, sampleRate);
-    audioBuffer.getChannelData(0).set(floats);
+    const ctx = this.ensureContext();
+    const audioBuffer = await this.getOrFetchBuffer(text, assignment.voiceId);
 
     // Apply playback rate from assignment
-    this.currentSource = this.audioContext.createBufferSource();
+    this.currentSource = ctx.createBufferSource();
     this.currentSource.buffer = audioBuffer;
     this.currentSource.playbackRate.value = assignment.rate ?? 1.0;
-    this.currentSource.connect(this.audioContext.destination);
+    this.currentSource.connect(ctx.destination);
 
     if (onEnd) {
       this.currentSource.addEventListener("ended", onEnd);

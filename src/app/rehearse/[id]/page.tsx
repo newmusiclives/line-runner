@@ -64,7 +64,7 @@ export default function RehearsePage({
     playbackSpeed: 1.0,
     listenMode: true,
     matchThreshold: 0.75,
-    silenceMs: 2500,
+    silenceMs: 1500,
   });
 
   // Feature states
@@ -355,6 +355,19 @@ export default function RehearsePage({
       setWaitingForUser(true);
       voiceEngineRef.current?.stop();
       lineStartTimeRef.current = Date.now();
+
+      // Prefetch the next AI line's TTS while the user is speaking. This
+      // hides the /api/voice/tts round-trip (500ms–2s for Gemini) inside the
+      // user's speaking window so Juliet responds immediately when the silence
+      // timer fires, instead of feeling like she's still loading.
+      const nextLine = dialogueLines[currentLineIndex + 1];
+      if (nextLine && nextLine.character && nextLine.character !== session.myCharacter) {
+        const nextVoice = getVoiceForCharacter(nextLine.character);
+        if (nextVoice) {
+          voiceEngineRef.current?.prefetch?.(nextLine.text, nextVoice.voiceId);
+        }
+      }
+
       // When listen-mode is on and supported, the mic listener triggers advance.
       // Fall back to fixed-pause timer otherwise (or wait for manual Done).
       const useListener = timingSettings.listenMode && lineListener.isSupported;
@@ -375,7 +388,7 @@ export default function RehearsePage({
       // Cue-only mode: speak but show minimal text (handled in component)
       speakLine(currentLine);
     }
-  }, [currentLineIndex, isPlaying, isPaused, session, autoAdvance, timingSettings.pauseDuration, timingSettings.listenMode, lineListener.isSupported, speakLine, advanceLine, dialogueLines, mode]);
+  }, [currentLineIndex, isPlaying, isPaused, session, autoAdvance, timingSettings.pauseDuration, timingSettings.listenMode, lineListener.isSupported, speakLine, advanceLine, dialogueLines, mode, getVoiceForCharacter]);
 
   // Play/Pause/Stop handlers
   const handlePlay = useCallback(() => {
