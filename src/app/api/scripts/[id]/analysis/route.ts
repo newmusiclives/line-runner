@@ -16,7 +16,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   // 20 analyses/hour per user. Cached results don't count against the limit (we'd
   // skip the AI call regardless), but the cap prevents bots from spamming the
   // first-analysis path that does run analyzeScript.
-  const rl = checkRateLimit(`analysis:${session.user.id}`, 20, 3_600_000);
+  const rl = await checkRateLimit(`analysis:${session.user.id}`, 20, 3_600_000);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many analysis requests. Try again later.", code: "RATE_LIMITED" },

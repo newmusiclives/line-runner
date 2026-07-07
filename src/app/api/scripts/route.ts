@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   }
 
   // 30 uploads/hour cap — generous, but stops scripted upload bombs.
-  const rl = checkRateLimit(`script-upload:${session.user.id}`, 30, 3_600_000);
+  const rl = await checkRateLimit(`script-upload:${session.user.id}`, 30, 3_600_000);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many uploads. Try again later.", code: "RATE_LIMITED" },

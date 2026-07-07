@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   // 60 calls/min per user — generous for natural rehearsal, hard stop for scripted abuse.
   // In-memory limiter is best-effort on Netlify cold starts; back with Upstash for real protection.
-  const rl = checkRateLimit(`tts:${session.user.id}`, 60, 60_000);
+  const rl = await checkRateLimit(`tts:${session.user.id}`, 60, 60_000);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many TTS requests. Please slow down.", code: "RATE_LIMITED" },

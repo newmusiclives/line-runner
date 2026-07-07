@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
 
-  const { allowed } = checkRateLimit(`forgot:${email}`, 3, 900000);
+  const { allowed } = await checkRateLimit(`forgot:${email}`, 3, 900000);
   if (!allowed) {
     return NextResponse.json({ success: true }); // Don't reveal rate limiting
   }
