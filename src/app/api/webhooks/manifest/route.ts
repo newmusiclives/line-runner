@@ -1,20 +1,49 @@
 import { NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { getDb } from "@/lib/db";
 import { ensureTable, getSetting } from "@/lib/db/integrations";
 
+// Constant-time compare of two hex signatures, tolerant of differing lengths.
+function signaturesMatch(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, "hex");
+  const bufB = Buffer.from(b, "hex");
+  if (bufA.length === 0 || bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
+
 export async function POST(request: Request) {
-  // Verify webhook signature if Manifest provides one
   await ensureTable();
   const secretKey = await getSetting("manifest_secret_key");
 
+  // Read the raw body once so the HMAC is computed over the exact bytes sent.
+  const rawBody = await request.text();
   const webhookSignature = request.headers.get("x-manifest-signature");
-  // Basic signature check (if Manifest sends one)
-  if (secretKey && webhookSignature) {
-    // In production, verify HMAC signature
-    // For now, just ensure we have a key configured
+
+  // Verify the HMAC-SHA256 signature. When a secret is configured we require a
+  // valid signature — reject anything unsigned or mismatched so a leaked
+  // endpoint URL can't be used to forge payment events.
+  if (secretKey) {
+    const expected = createHmac("sha256", secretKey).update(rawBody).digest("hex");
+    // Accept an optional "sha256=" prefix, which some providers prepend.
+    const provided = (webhookSignature || "").replace(/^sha256=/, "").trim();
+    if (!provided || !signaturesMatch(provided, expected)) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
   }
 
-  const body = await request.json();
+  interface ManifestData {
+    transaction_id?: string;
+    customer_email?: string;
+    amount?: number;
+    metadata?: unknown;
+    subscription_id?: string;
+  }
+  let body: { event?: string; data?: ManifestData };
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const { event, data } = body;
   const sql = getDb();
 

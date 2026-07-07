@@ -57,6 +57,17 @@ export default function RehearsePage({
   const currentLineRef = useRef<HTMLDivElement>(null);
   const isPlayingRef = useRef(false);
   const isPausedRef = useRef(false);
+  // The line index whose audio has actually started speaking, and a live
+  // mirror of currentLineIndex. Together these let handleResume tell "paused
+  // mid-audio" (continue the audio) from "paused during the pre-line beat,
+  // before any audio started" (re-arm the line so it isn't stranded).
+  const spokenIndexRef = useRef(-1);
+  const currentIndexRef = useRef(0);
+  // Pending "beat" before an AI line speaks. Held in a ref (not torn down by
+  // effect cleanup) so a harmless same-line effect re-run — e.g. the user
+  // nudging a Timing slider during the beat — can't strand the line. Cleared
+  // explicitly on real line changes, stop, pause, skip and unmount.
+  const beatTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Timing settings
   const [timingSettings, setTimingSettings] = useState<TimingSettings>({
@@ -156,6 +167,17 @@ export default function RehearsePage({
 
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
   useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+  useEffect(() => { currentIndexRef.current = currentLineIndex; }, [currentLineIndex]);
+
+  const clearBeat = useCallback(() => {
+    if (beatTimerRef.current) {
+      clearTimeout(beatTimerRef.current);
+      beatTimerRef.current = null;
+    }
+  }, []);
+
+  // Safety net: clear any pending beat when the component unmounts.
+  useEffect(() => clearBeat, [clearBeat]);
 
   // Use a ref for the remote command handler to avoid stale closures
   const remoteCommandRef = useRef<(command: string) => void>(() => {});
@@ -298,8 +320,13 @@ export default function RehearsePage({
       adjustedAssignment = { ...adjustedAssignment, pitch: adjustedAssignment.pitch + modAdj.pitchDelta, rate: adjustedAssignment.rate + modAdj.rateDelta };
     }
 
-    // Apply timing speed to rate
-    adjustedAssignment = { ...adjustedAssignment, rate: adjustedAssignment.rate * timingSettings.playbackSpeed };
+    // Clamp the expressive rate (emotion + wildcard deltas) to a subtle band
+    // before applying the user's chosen speed. On the Gemini/Demo engines rate
+    // is an AudioBuffer playbackRate that shifts pitch as well as tempo, so
+    // large expressive deltas detune the voice ("chipmunk"). Keep expression
+    // subtle; the user's playbackSpeed (0.5–2.0) still multiplies on top.
+    const expressiveRate = Math.min(1.25, Math.max(0.8, adjustedAssignment.rate));
+    adjustedAssignment = { ...adjustedAssignment, rate: expressiveRate * timingSettings.playbackSpeed };
 
     voiceEngineRef.current.speak(line.text, adjustedAssignment, () => {
       if (isPlayingRef.current && !isPausedRef.current) advanceLine();
@@ -350,6 +377,8 @@ export default function RehearsePage({
     // skip lines. Only set up once per index transition.
     if (lastSetupIndexRef.current === currentLineIndex) return;
     lastSetupIndexRef.current = currentLineIndex;
+    // Real line change — drop any beat still pending from the previous line.
+    clearBeat();
 
     if (currentLine.character === session.myCharacter) {
       setWaitingForUser(true);
@@ -384,11 +413,48 @@ export default function RehearsePage({
       setWaitingForUser(false);
       lineStartTimeRef.current = Date.now();
 
+      // Insert a natural beat before the AI partner speaks so lines don't run
+      // together. When we've just come off the actor's own line they've
+      // already had their pause (silence detection or the fixed timer), so
+      // pick up quickly; the very first line of the scene leads in fast too.
+      // Between consecutive AI lines, use the full "Pause Between Lines" gap so
+      // multi-line passages breathe — this is what the Timing slider governs.
+      const prevLine = dialogueLines[currentLineIndex - 1];
+      const prevWasUser = !!prevLine && prevLine.character === session.myCharacter;
+      const isFirstLine = currentLineIndex === 0;
+      const beatMs = isFirstLine ? 400 : prevWasUser ? 350 : timingSettings.pauseDuration * 1000;
+
       // Backstage mode: always speak (that is its entire point)
       // Cue-only mode: speak but show minimal text (handled in component)
-      speakLine(currentLine);
+      // Held in beatTimerRef (see its declaration) so a same-line effect re-run
+      // during the beat can't cancel the AI line and strand the scene.
+      clearBeat();
+      beatTimerRef.current = setTimeout(() => {
+        beatTimerRef.current = null;
+        if (!isPausedRef.current) {
+          spokenIndexRef.current = currentLineIndex;
+          speakLine(currentLine);
+        }
+      }, beatMs);
     }
-  }, [currentLineIndex, isPlaying, isPaused, session, autoAdvance, timingSettings.pauseDuration, timingSettings.listenMode, lineListener.isSupported, speakLine, advanceLine, dialogueLines, mode, getVoiceForCharacter]);
+  }, [currentLineIndex, isPlaying, isPaused, session, autoAdvance, timingSettings.pauseDuration, timingSettings.listenMode, lineListener.isSupported, speakLine, advanceLine, dialogueLines, mode, getVoiceForCharacter, clearBeat]);
+
+  // Mic-unavailable fallback: if speech recognition can't run for the actor's
+  // line (permission denied or a fatal error), the listener will never fire an
+  // advance. Without this, playback would freeze on the user's line until they
+  // manually press Done. When that happens, fall back to the fixed "Pause
+  // Between Lines" timer so the scene keeps moving on its own.
+  useEffect(() => {
+    if (!isMyLineNow || !waitingForUser || !isPlaying || isPaused || !autoAdvance) return;
+    if (!lineListener.unavailable) return;
+    const timeout = setTimeout(() => {
+      if (!isPausedRef.current) {
+        setWaitingForUser(false);
+        advanceLine();
+      }
+    }, timingSettings.pauseDuration * 1000);
+    return () => clearTimeout(timeout);
+  }, [lineListener.unavailable, isMyLineNow, waitingForUser, isPlaying, isPaused, autoAdvance, timingSettings.pauseDuration, advanceLine]);
 
   // Play/Pause/Stop handlers
   const handlePlay = useCallback(() => {
@@ -407,24 +473,33 @@ export default function RehearsePage({
 
   const handlePause = useCallback(() => {
     voiceEngineRef.current?.pause();
+    // Hold any pending pre-line beat so it doesn't fire (and speak) while paused.
+    clearBeat();
     setIsPaused(true);
     broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: true, isPaused: true });
-  }, []);
+  }, [clearBeat]);
 
   const handleResume = useCallback(() => {
     voiceEngineRef.current?.resume();
+    // If we paused during the pre-line beat (audio for this line hadn't started
+    // yet, so the beat was cleared on pause), clear the setup guard so resuming
+    // re-arms the line instead of stranding it silently.
+    if (spokenIndexRef.current !== currentIndexRef.current) {
+      lastSetupIndexRef.current = -1;
+    }
     setIsPaused(false);
     broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: true, isPaused: false });
   }, []);
 
   const handleStop = useCallback(() => {
     voiceEngineRef.current?.stop();
+    clearBeat();
     setIsPlaying(false);
     setIsPaused(false);
     setWaitingForUser(false);
     lastSetupIndexRef.current = -1;
     broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: false, isPaused: false });
-  }, []);
+  }, [clearBeat]);
 
   const togglePlay = () => {
     if (isPlaying && !isPaused) {
@@ -438,18 +513,21 @@ export default function RehearsePage({
 
   const skipLine = useCallback(() => {
     voiceEngineRef.current?.stop();
+    clearBeat();
     setWaitingForUser(false);
     advanceLine();
-  }, [advanceLine]);
+  }, [advanceLine, clearBeat]);
 
   const goBack = useCallback(() => {
     voiceEngineRef.current?.stop();
+    clearBeat();
     setWaitingForUser(false);
     setCurrentLineIndex((prev) => Math.max(0, prev - 1));
-  }, []);
+  }, [clearBeat]);
 
   const restart = useCallback(() => {
     voiceEngineRef.current?.stop();
+    clearBeat();
     setWaitingForUser(false);
     setCurrentLineIndex(0);
     setIsPlaying(false);
@@ -461,7 +539,7 @@ export default function RehearsePage({
     lastSetupIndexRef.current = -1;
     if (mode === "wildcard") setWildcardModifier(null);
     broadcastChannelRef.current?.postMessage({ type: "status", isPlaying: false, isPaused: false });
-  }, [mode]);
+  }, [mode, clearBeat]);
 
   // Keep remote command ref up to date with latest handlers
   useEffect(() => {
@@ -674,6 +752,11 @@ export default function RehearsePage({
                       Mic listening not supported in this browser
                     </div>
                   )}
+                  {timingSettings.listenMode && lineListener.isSupported && lineListener.unavailable && (
+                    <div className="text-xs text-warning bg-warning/10 border border-warning/20 px-2 py-0.5 rounded-full">
+                      Mic unavailable — using timed pauses
+                    </div>
+                  )}
                   <button onClick={(e) => { e.stopPropagation(); setWaitingForUser(false); advanceLine(); }} className="text-sm bg-success/20 text-success px-3 py-1 rounded-full hover:bg-success/30 transition-colors">
                     Done
                   </button>
@@ -683,7 +766,7 @@ export default function RehearsePage({
                     {(lineListener.finalTranscript + " " + lineListener.partialTranscript).trim()}
                   </p>
                 )}
-                {timingSettings.listenMode && lineListener.error && (
+                {timingSettings.listenMode && lineListener.error && !lineListener.unavailable && (
                   <p className="text-xs text-danger">Mic error: {lineListener.error}</p>
                 )}
               </div>

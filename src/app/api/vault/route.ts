@@ -20,6 +20,9 @@ export async function GET() {
       s.created_at as "createdAt",
       COUNT(DISTINCT rs.id) as "sessionCount",
       MAX(rs.started_at) as "lastAccessed",
+      (SELECT rs2.my_character FROM rehearsal_sessions rs2
+        WHERE rs2.script_id = s.id AND rs2.user_id = ${userId}
+        ORDER BY rs2.started_at DESC LIMIT 1) as "characterName",
       (SELECT COUNT(*) FROM self_tape_takes st WHERE st.script_id = s.id AND st.is_keeper = true) as "keeperTakes"
     FROM scripts s
     LEFT JOIN rehearsal_sessions rs ON rs.script_id = s.id AND rs.user_id = ${userId}
@@ -32,7 +35,7 @@ export async function GET() {
     id: `vault-${i}`,
     scriptId: s.scriptId,
     scriptTitle: s.scriptTitle,
-    characterName: "Lead",
+    characterName: s.characterName || "Lead",
     genre: s.genre,
     voiceConfig: null,
     lastAccessed: s.lastAccessed || s.createdAt,

@@ -7,8 +7,23 @@ interface UseLineListenerOptions {
   expectedText: string;
   onMatch?: () => void;
   onSilence?: () => void;
+  /**
+   * Called when speech recognition cannot run at all for this line — mic
+   * permission denied, a fatal recognition error, or start() throwing. The
+   * caller should fall back to a timed pause so the scene never freezes on
+   * the user's line.
+   */
+  onUnavailable?: () => void;
   matchThreshold?: number;
   silenceMs?: number;
+  /**
+   * Absolute ceiling (ms) from when the user's line becomes active. If the
+   * actor never speaks (blanked on the line), advance anyway once this
+   * elapses so a stuck actor is never stranded. Only fires while no speech
+   * has been detected — once they start talking, normal silence detection
+   * takes over and this ceiling is disarmed.
+   */
+  maxSilentWaitMs?: number;
   language?: string;
 }
 
@@ -19,6 +34,8 @@ interface UseLineListenerResult {
   finalTranscript: string;
   matchScore: number;
   error: string | null;
+  /** True once recognition has failed for this line (permission/fatal error). */
+  unavailable: boolean;
 }
 
 function normalizeWords(text: string): string[] {
@@ -65,8 +82,10 @@ export function useLineListener({
   expectedText,
   onMatch,
   onSilence,
+  onUnavailable,
   matchThreshold = 0.85,
   silenceMs = 2200,
+  maxSilentWaitMs = 10000,
   language = "en-US",
 }: UseLineListenerOptions): UseLineListenerResult {
   const [isListening, setIsListening] = useState(false);
@@ -74,15 +93,18 @@ export function useLineListener({
   const [finalTranscript, setFinalTranscript] = useState("");
   const [matchScore, setMatchScore] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
 
   const recognitionRef = useRef<unknown>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ceilingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finalTextRef = useRef("");
   const hasSpokenRef = useRef(false);
   const matchedRef = useRef(false);
   const onMatchRef = useRef(onMatch);
   const onSilenceRef = useRef(onSilence);
+  const onUnavailableRef = useRef(onUnavailable);
 
   useEffect(() => {
     onMatchRef.current = onMatch;
@@ -90,6 +112,9 @@ export function useLineListener({
   useEffect(() => {
     onSilenceRef.current = onSilence;
   }, [onSilence]);
+  useEffect(() => {
+    onUnavailableRef.current = onUnavailable;
+  }, [onUnavailable]);
 
   const isSupported =
     typeof window !== "undefined" && getRecognitionConstructor() !== null;
@@ -102,6 +127,10 @@ export function useLineListener({
     if (restartTimerRef.current) {
       clearTimeout(restartTimerRef.current);
       restartTimerRef.current = null;
+    }
+    if (ceilingTimerRef.current) {
+      clearTimeout(ceilingTimerRef.current);
+      ceilingTimerRef.current = null;
     }
   }, []);
 
@@ -157,6 +186,32 @@ export function useLineListener({
     setFinalTranscript("");
     setMatchScore(0);
     setError(null);
+    setUnavailable(false);
+
+    // Fires the advance exactly once per line, cancelling any pending timers.
+    const fireAdvance = () => {
+      if (matchedRef.current) return;
+      matchedRef.current = true;
+      clearTimers();
+      onSilenceRef.current?.();
+    };
+
+    // Safety ceiling: if the actor never says anything (blanked on the line),
+    // advance anyway once maxSilentWaitMs elapses. Disarmed as soon as any
+    // speech is detected — from then on the silence timer governs pacing, so a
+    // long soliloquy is never cut off by this.
+    ceilingTimerRef.current = setTimeout(() => {
+      if (!hasSpokenRef.current) fireAdvance();
+    }, maxSilentWaitMs);
+
+    // Recognition failed to run (permission denied / fatal error): tell the
+    // caller so it can fall back to a timed pause instead of freezing here.
+    const markUnavailable = () => {
+      if (matchedRef.current) return;
+      setUnavailable(true);
+      clearTimers();
+      onUnavailableRef.current?.();
+    };
 
     const rec = new Ctor();
     rec.continuous = true;
@@ -200,6 +255,12 @@ export function useLineListener({
       // actual silence gap; the wait length scales with how done the line is.
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (hasSpokenRef.current) {
+        // Actor has started delivering — the safety ceiling no longer applies;
+        // from here silence detection governs the pace.
+        if (ceilingTimerRef.current) {
+          clearTimeout(ceilingTimerRef.current);
+          ceilingTimerRef.current = null;
+        }
         // On long lines (Shakespeare soliloquies) the user can cross the
         // match threshold before they've actually finished delivering, with
         // breath pauses landing inside the snappy-wait window. 1000ms covers
@@ -208,20 +269,24 @@ export function useLineListener({
         if (score >= matchThreshold) wait = 1000;
         else if (score >= 0.25) wait = silenceMs;
         else wait = silenceMs * 2;
-        silenceTimerRef.current = setTimeout(() => {
-          if (!matchedRef.current) {
-            matchedRef.current = true;
-            onSilenceRef.current?.();
-          }
-        }, wait);
+        silenceTimerRef.current = setTimeout(fireAdvance, wait);
       }
     };
 
     rec.onerror = (event: unknown) => {
       const err = (event as { error?: string })?.error ?? "speech-error";
       // 'no-speech' and 'aborted' are normal — let onend restart handle them.
-      if (err !== "no-speech" && err !== "aborted") {
-        setError(err);
+      if (err === "no-speech" || err === "aborted") return;
+      setError(err);
+      // Permission/service problems mean recognition will never deliver
+      // results for this line — hand off to the timed-pause fallback so the
+      // scene keeps moving instead of stalling on the actor's line forever.
+      if (
+        err === "not-allowed" ||
+        err === "service-not-allowed" ||
+        err === "audio-capture"
+      ) {
+        markUnavailable();
       }
     };
 
@@ -247,6 +312,9 @@ export function useLineListener({
       setIsListening(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "failed-to-start");
+      // start() throwing (already-started, insecure context, no mic) means we
+      // can't listen for this line — fall back to a timed pause.
+      markUnavailable();
     }
 
     return () => {
@@ -258,6 +326,7 @@ export function useLineListener({
     language,
     matchThreshold,
     silenceMs,
+    maxSilentWaitMs,
     isSupported,
     stop,
     clearTimers,
@@ -270,5 +339,6 @@ export function useLineListener({
     finalTranscript,
     matchScore,
     error,
+    unavailable,
   };
 }

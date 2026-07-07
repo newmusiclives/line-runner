@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
-// In-memory store for control commands (per session)
-// In production, this would use Redis or DB
-const controlStore = new Map<string, { command: string; timestamp: number }>();
+import { getControlCommandSince, setControlCommand } from "@/lib/db/rehearsal-control";
 
 const commandSchema = z.object({
   command: z.enum(["play", "pause", "resume", "stop", "restart", "next", "prev"]),
@@ -17,9 +14,14 @@ export async function GET(
   const url = new URL(request.url);
   const since = parseInt(url.searchParams.get("since") || "0", 10);
 
-  const entry = controlStore.get(id);
-  if (entry && entry.timestamp > since) {
-    return NextResponse.json({ command: entry.command, timestamp: entry.timestamp });
+  try {
+    const entry = await getControlCommandSince(id, since);
+    if (entry) {
+      return NextResponse.json(entry);
+    }
+  } catch {
+    // DB unavailable — degrade to "no command" rather than 500 so the poller
+    // (which fires every second) doesn't spam errors.
   }
 
   return NextResponse.json({ command: null, timestamp: since });
@@ -37,16 +39,12 @@ export async function POST(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const entry = { command: parsed.data.command, timestamp: Date.now() };
-  controlStore.set(id, entry);
+  const timestamp = Date.now();
+  try {
+    await setControlCommand(id, parsed.data.command, timestamp);
+  } catch {
+    return NextResponse.json({ error: "Could not store command" }, { status: 503 });
+  }
 
-  // Clean up old entries after 5 minutes
-  setTimeout(() => {
-    const current = controlStore.get(id);
-    if (current && current.timestamp === entry.timestamp) {
-      controlStore.delete(id);
-    }
-  }, 5 * 60 * 1000);
-
-  return NextResponse.json({ success: true, ...entry });
+  return NextResponse.json({ success: true, command: parsed.data.command, timestamp });
 }

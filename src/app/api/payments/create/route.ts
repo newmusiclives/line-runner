@@ -70,7 +70,15 @@ export async function POST(request: Request) {
       );
     }
   } else {
-    // Simulated payment — no Manifest keys configured
+    // No Manifest keys configured. Never fabricate a paid subscription in
+    // production — that would grant paid access with no payment taken. Only
+    // allow the simulated grant outside production (local dev / testing).
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "Payments are not configured", code: "NOT_CONFIGURED" },
+        { status: 503 }
+      );
+    }
     transactionId = `sim_${Date.now()}`;
     mode = "simulated";
   }
